@@ -1,0 +1,22 @@
+{
+  "name": "StockCall",
+  "symbol": "CALL",
+  "logo": "",
+  "description": "StockCall: hidden-entry forecast rounds and oracle-guarded liquidity Founts for tokenized stocks on Robinhood Chain. Arena fees, forfeits and 30% of Fount trading fees buy $CALL and burn it.",
+  "socials": {
+    "twitter": "",
+    "telegram": "",
+    "discord": "",
+    "website": "https://stockcall.fun",
+    "farcaster": ""
+  },
+  "launchConfigId": 0,
+  "pairToken": "0x0000000000000000000000000000000000000000",
+  "creatorFeeRecipient": "",
+  "creatorTaxBps": 0,
+  "buybackEnabled": true,
+  "salt": "",
+  "snipeTaxExemptions": [],
+  "devBuyEth": "0",
+  "devBuySlippageBps": 300
+}

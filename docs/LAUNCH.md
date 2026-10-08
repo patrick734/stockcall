@@ -2,8 +2,8 @@
 
 Everything runs from the repo folder on your Mac. Nothing here ever asks you to paste a private key into a file.
 
-> **Status:** the contracts, the deploy toolkit and the keeper are ready. The website is the next build step. Do not
-> deploy to mainnet before it exists and before an independent audit of the contracts in [SECURITY.md](SECURITY.md).
+> **Status:** the contracts, deploy toolkit, keeper and website are ready. Do not deploy to mainnet before an
+> independent audit of the contracts in [SECURITY.md](SECURITY.md).
 
 ## What "rug-proof" means here
 
@@ -101,6 +101,19 @@ git add -A && git commit -m "Mainnet deployment" && git push
 ```
 
 Post the `./verify.sh` output.
+
+## 5b. Website on Vercel
+
+1. vercel.com > Add New > Project > import `patrick734/stockcall`. Set **Root Directory** to `app`. Deploy.
+2. Storage > Create > **Upstash Redis** > connect it to the project (this adds the `UPSTASH_REDIS_*` variables).
+3. Settings > Environment Variables: add `NEXT_PUBLIC_SITE_URL` and `REVEAL_INBOX_TOKEN` (any long random string).
+   See `app/.env.example`. Redeploy.
+4. GitHub repo > Settings > Secrets and variables > Actions > New repository secret:
+   `REVEAL_INBOX_URL` = `https://<your site>/api/reveals` and `REVEAL_INBOX_TOKEN` = the same string as in Vercel.
+5. Point your domain at Vercel (Settings > Domains).
+
+The site reads the deployed addresses from `app/src/generated/deployments.ts`, which `./launch.sh` writes, so the
+push after the deploy publishes them.
 
 ## 6. Launch $CALL on Pons
 

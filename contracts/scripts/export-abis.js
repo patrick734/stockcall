@@ -52,6 +52,10 @@ fs.writeFileSync(
   drawdownRetire: \`0x\${string}\`;
   registry: \`0x\${string}\`;
   founts: Record<string, { fount: \`0x\${string}\`; position: \`0x\${string}\`; equityToken: \`0x\${string}\`; name: string }>;
+  arena: \`0x\${string}\`;
+  buyBurn: \`0x\${string}\`;
+  keeperRevealKey: \`0x\${string}\` | null;
+  assets: Record<string, { token: \`0x\${string}\`; pool: \`0x\${string}\`; fee: number; observations: number }>;
   [key: string]: unknown;
 };\n`
 );
@@ -65,6 +69,18 @@ const catalog = {
   launchFounts: config.launch.founts,
   oracle: config.oracle,
   heldValueCapUsdg: config.launch.heldValueCapUsdg,
+  explorer: config.network.explorer,
+  brand: config.brand,
+  arena: {
+    assets: config.arena.assets,
+    cards: config.arena.cards,
+    weekdayHours: config.arena.weekdayHours,
+    feeBps: config.arena.feeBps,
+    guardTicks: config.arena.guardTicks,
+    minStake: config.arena.minStake,
+    maxStake: config.arena.maxStake,
+    roundCap: config.arena.roundCap,
+  },
 };
 fs.writeFileSync(
   path.join(OUT_DIR, "catalog.ts"),

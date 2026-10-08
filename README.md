@@ -37,10 +37,11 @@ contracts/   Hardhat project (Solidity 0.8.26, OpenZeppelin 5.1, Uniswap v4 MIT 
 launch/      launches $CALL on the Pons V2 launchpad from the dev wallet
 tools/       encrypted keystores for wallets imported from MetaMask (~/.stockcall/keystores)
 keeper/      keeper bot: reveals sealed Arena entries, settles rounds, flushes and burns, Fount upkeep (GitHub Actions)
+app/         Next.js site: Play (hidden entries, balance, reveal, settle, claim), Founts, Burn, Safety, How it works,
+             and /api/reveals, the sealed-reveal inbox the keeper reads (Vercel + Upstash Redis)
 docs/        LAUNCH.md (step by step), SECURITY.md (trust model and audit scope)
 ```
 
-The website is the next build step.
 
 ## Commands
 

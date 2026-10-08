@@ -4,65 +4,65 @@ export const deployments: Record<number, Deployment> = {
   "4663": {
     "network": "robinhood",
     "chainId": 4663,
-    "deployer": "0xe6BbD9367218d231468742B1B76D984B0e74Ca95",
+    "deployer": "0x39FF764ce69afd781F0CF39182ea06a6664D9AF0",
     "roles": {
       "admin": "0x571Ff8B6DAF7E431df2B4824E55A89A0a8C8d86E",
       "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
       "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845"
     },
-    "startBlock": 83216297,
+    "startBlock": 83256233,
     "founts": {
       "TSLA": {
-        "fount": "0x61d3699bDAc00261068E45478288896BEFAeE55a",
-        "position": "0xE26F27320724B92101F677A12720667Acd368Ffb",
+        "fount": "0x175df85671660E4275e82993411b930C85BadD33",
+        "position": "0xacE0a13f2E1AE69C8f774770Df370c1F0356845d",
         "equityToken": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
         "name": "Tesla"
       },
       "NVDA": {
-        "fount": "0x49274A32395C0Eb236EE7300A891B0cd31743507",
-        "position": "0xD232f23C69fa0B556dD20D2E0575B15E9b051C32",
+        "fount": "0x23dCE8cD8FedB864E45B7033691f17D0f401A6cB",
+        "position": "0xBA65920cF78955285691a4faE57ca530Ae989988",
         "equityToken": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
         "name": "NVIDIA"
       },
       "AAPL": {
-        "fount": "0x9Ac4AAA554EbF74A27D1c7BB74604ed37591d02A",
-        "position": "0x22bF1A1224B70dE8bcF3c56A10aa704d8a7783d8",
+        "fount": "0xBB92859B1A4Fa9E71f3A5850769C1335c3B47650",
+        "position": "0x216774E10d198F73aDd236778ceFB2Fd88ea8e9C",
         "equityToken": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
         "name": "Apple"
       },
       "PLTR": {
-        "fount": "0x7DE401eb4b79F7D9Df599058b22d980B3F211223",
-        "position": "0x445AfB9797b8Bc21f6C7732BC69b7a5F5aded267",
+        "fount": "0x29365bc8D3EcfEA5a26Aba1fb998431483872E7e",
+        "position": "0x1819925106cD3aaDa0A0206bF071171131009f26",
         "equityToken": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
         "name": "Palantir"
       },
       "META": {
-        "fount": "0x7D83B50698aEBb960C9710635B48F94094046651",
-        "position": "0xcB4f83Eb380979983b63F327cdc086F3C7A06D90",
+        "fount": "0x9eF11928aB81517169302539a0C543E7a86324d7",
+        "position": "0xD2cc80c9D9c5e447e784B5270E2e19738A423892",
         "equityToken": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
         "name": "Meta"
       },
       "GOOGL": {
-        "fount": "0x8C837bfFC07185364713181B4f2c70d54eD4833e",
-        "position": "0xf83eD32f5be24132132D9481b996074FB4B23D99",
+        "fount": "0x3070B51A0b5E23C6A58D3CF213936ad9ab22C405",
+        "position": "0x10408Ca3107208e846492Cf471dE78a99b41da46",
         "equityToken": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
         "name": "Alphabet"
       },
       "SPY": {
-        "fount": "0xBD2D392fE8F51b25398aEC5b622E3405903Adb3B",
-        "position": "0x59ab68e80895da37927d71BFE6C05F99EC7e0ec9",
+        "fount": "0x7fDe9b84e9d339D7Ae46C396463D04ba293F0778",
+        "position": "0x1F5ad96d79Ac102493978F64B6e16611796C0957",
         "equityToken": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
         "name": "SPDR S&P 500"
       }
     },
-    "timelock": "0xc30933F00B2460f0acA037b77Ca41CB97735251c",
+    "timelock": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
     "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
     "burnToken": null,
-    "oracle": "0x6DBb12D6C539A25D0DfD5622fa96fe4f64FdA418",
-    "swapAdapter": "0xffd71b11d14fa7c6501C261b1F3F898f62708eED",
-    "drawdownRetire": "0x71F23681EC8c129D8Ec9B7726067B19B032E13FD",
-    "feeRouter": "0x244081785D2A70B163cCc6596De2e0cDD891Fb4d",
-    "registry": "0x68D9D80a36cCc1178756F8C87e19F7408aa7f13e",
+    "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+    "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+    "drawdownRetire": "0x42a2480ef32B38192a3e74A896Ad4F43505da7A9",
+    "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+    "registry": "0x4008aAe2093c8D2f2D3c4651FDcb4d6aFa5Dcde1",
     "v3Factory": "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA",
     "poolManager": "0x8366a39CC670B4001A1121B8F6A443A643e40951",
     "ponsHook": "0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044",
@@ -86,9 +86,667 @@ export const deployments: Record<number, Deployment> = {
         "observations": 7200
       }
     },
-    "buyBurn": "0x88407a27dBC051319CAfF9b8BD73f6F2eaf1764C",
-    "arena": "0xc00A2E2Ed61f57b8b500FcdB211F96eB9E1fD1DD",
-    "keeperRevealKey": "0x03e84bbdd033c592637f66658a8e676a08d2cc6053df2168d89548d66845684022"
+    "buyBurn": "0x943DFa6D33422EA876803e5f7bc692e58b57d21f",
+    "arena": "0x002Ba816fF5e927867503ae6D3537f94CEf45bf8",
+    "keeperRevealKey": "0x03e84bbdd033c592637f66658a8e676a08d2cc6053df2168d89548d66845684022",
+    "sources": [
+      {
+        "contract": "src/StockCall.sol:StockCallTimelock",
+        "address": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+        "args": [
+          172800,
+          [
+            "0x571Ff8B6DAF7E431df2B4824E55A89A0a8C8d86E"
+          ],
+          [
+            "0x571Ff8B6DAF7E431df2B4824E55A89A0a8C8d86E"
+          ],
+          "0x0000000000000000000000000000000000000000"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallOracle",
+        "address": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+        "args": [
+          "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+          "0x0000000000000000000000000000000000000000",
+          {
+            "feed": "0x61B7e5650328764B076A108EFF5fa7282a1B9aD2",
+            "maxAge": 93600,
+            "decimals": 6,
+            "minAnswer": "95000000",
+            "maxAnswer": "105000000"
+          },
+          1500,
+          1800,
+          [
+            {
+              "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+              "aggregator": "0x4A1166a659A55625345e9515b32adECea5547C38",
+              "maxAge": 93600,
+              "minAnswer": "3744100000",
+              "maxAnswer": "374410000000"
+            },
+            {
+              "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+              "aggregator": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+              "maxAge": 93600,
+              "minAnswer": "2359977941",
+              "maxAnswer": "235997794150"
+            },
+            {
+              "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+              "aggregator": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0",
+              "maxAge": 93600,
+              "minAnswer": "3364093268",
+              "maxAnswer": "336409326870"
+            },
+            {
+              "token": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+              "aggregator": "0x820ABedFF239034956B7A9d2F0a331f9F075eB4c",
+              "maxAge": 93600,
+              "minAnswer": "1983750000",
+              "maxAnswer": "198375000000"
+            },
+            {
+              "token": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+              "aggregator": "0x7C38C00C30BEe9378381E7B6135d7283356D71b1",
+              "maxAge": 93600,
+              "minAnswer": "7171731103",
+              "maxAnswer": "717173110310"
+            },
+            {
+              "token": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+              "aggregator": "0xF6f373a037c30F0e5010d854385cA89185AE638b",
+              "maxAge": 93600,
+              "minAnswer": "3489126495",
+              "maxAnswer": "348912649560"
+            },
+            {
+              "token": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+              "aggregator": "0x319724394D3A0e3669269846abE664Cd621f9f6A",
+              "maxAge": 93600,
+              "minAnswer": "7758956958",
+              "maxAnswer": "775895695840"
+            }
+          ]
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallSwapAdapter",
+        "address": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+        "args": [
+          "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          [
+            "0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044"
+          ],
+          [
+            {
+              "currency0": "0x0000000000000000000000000000000000000000",
+              "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "fee": 100,
+              "tickSpacing": 1,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            },
+            {
+              "currency0": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+              "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "fee": 3000,
+              "tickSpacing": 60,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            },
+            {
+              "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "currency1": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+              "fee": 3000,
+              "tickSpacing": 60,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            },
+            {
+              "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "currency1": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+              "fee": 3000,
+              "tickSpacing": 60,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            },
+            {
+              "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "currency1": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+              "fee": 10000,
+              "tickSpacing": 200,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            },
+            {
+              "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "currency1": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+              "fee": 3000,
+              "tickSpacing": 60,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            },
+            {
+              "currency0": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+              "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "fee": 3000,
+              "tickSpacing": 60,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            },
+            {
+              "currency0": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+              "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+              "fee": 3000,
+              "tickSpacing": 60,
+              "hooks": "0x0000000000000000000000000000000000000000"
+            }
+          ]
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallBurn",
+        "address": "0x42a2480ef32B38192a3e74A896Ad4F43505da7A9",
+        "args": [
+          "0x0000000000000000000000000000000000000000",
+          "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+          "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+          "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+          "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+          3600,
+          [
+            "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+            "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+            "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+            "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+            "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+            "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+            "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C"
+          ],
+          [
+            "250000000",
+            "500000000000000000",
+            "500000000000000000",
+            "500000000000000000",
+            "500000000000000000",
+            "500000000000000000",
+            "500000000000000000",
+            "500000000000000000"
+          ]
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFeeRouter",
+        "address": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+        "args": [
+          "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+          "0x42a2480ef32B38192a3e74A896Ad4F43505da7A9"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallPosition",
+        "address": "0xacE0a13f2E1AE69C8f774770Df370c1F0356845d",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+          "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+          "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+          {
+            "currency0": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+            "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "fee": 3000,
+            "tickSpacing": 60,
+            "hooks": "0x0000000000000000000000000000000000000000"
+          },
+          "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFount",
+        "address": "0x175df85671660E4275e82993411b930C85BadD33",
+        "args": [
+          {
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "equityToken": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+            "position": "0xacE0a13f2E1AE69C8f774770Df370c1F0356845d",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+            "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+            "heldValueCap": "25000000000"
+          },
+          "StockCall TSLA Fount",
+          "fTSLA"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallPosition",
+        "address": "0xBA65920cF78955285691a4faE57ca530Ae989988",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+          "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+          "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+          {
+            "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "currency1": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+            "fee": 3000,
+            "tickSpacing": 60,
+            "hooks": "0x0000000000000000000000000000000000000000"
+          },
+          "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFount",
+        "address": "0x23dCE8cD8FedB864E45B7033691f17D0f401A6cB",
+        "args": [
+          {
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "equityToken": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+            "position": "0xBA65920cF78955285691a4faE57ca530Ae989988",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+            "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+            "heldValueCap": "25000000000"
+          },
+          "StockCall NVDA Fount",
+          "fNVDA"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallPosition",
+        "address": "0x216774E10d198F73aDd236778ceFB2Fd88ea8e9C",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+          "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+          "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+          {
+            "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "currency1": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+            "fee": 3000,
+            "tickSpacing": 60,
+            "hooks": "0x0000000000000000000000000000000000000000"
+          },
+          "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFount",
+        "address": "0xBB92859B1A4Fa9E71f3A5850769C1335c3B47650",
+        "args": [
+          {
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "equityToken": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+            "position": "0x216774E10d198F73aDd236778ceFB2Fd88ea8e9C",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+            "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+            "heldValueCap": "25000000000"
+          },
+          "StockCall AAPL Fount",
+          "fAAPL"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallPosition",
+        "address": "0x1819925106cD3aaDa0A0206bF071171131009f26",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+          "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+          "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+          {
+            "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "currency1": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+            "fee": 10000,
+            "tickSpacing": 200,
+            "hooks": "0x0000000000000000000000000000000000000000"
+          },
+          "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFount",
+        "address": "0x29365bc8D3EcfEA5a26Aba1fb998431483872E7e",
+        "args": [
+          {
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "equityToken": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+            "position": "0x1819925106cD3aaDa0A0206bF071171131009f26",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+            "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+            "heldValueCap": "25000000000"
+          },
+          "StockCall PLTR Fount",
+          "fPLTR"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallPosition",
+        "address": "0xD2cc80c9D9c5e447e784B5270E2e19738A423892",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+          "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+          "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+          {
+            "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "currency1": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+            "fee": 3000,
+            "tickSpacing": 60,
+            "hooks": "0x0000000000000000000000000000000000000000"
+          },
+          "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFount",
+        "address": "0x9eF11928aB81517169302539a0C543E7a86324d7",
+        "args": [
+          {
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "equityToken": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+            "position": "0xD2cc80c9D9c5e447e784B5270E2e19738A423892",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+            "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+            "heldValueCap": "25000000000"
+          },
+          "StockCall META Fount",
+          "fMETA"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallPosition",
+        "address": "0x10408Ca3107208e846492Cf471dE78a99b41da46",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+          "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+          "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+          {
+            "currency0": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+            "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "fee": 3000,
+            "tickSpacing": 60,
+            "hooks": "0x0000000000000000000000000000000000000000"
+          },
+          "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFount",
+        "address": "0x3070B51A0b5E23C6A58D3CF213936ad9ab22C405",
+        "args": [
+          {
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "equityToken": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+            "position": "0x10408Ca3107208e846492Cf471dE78a99b41da46",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+            "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+            "heldValueCap": "25000000000"
+          },
+          "StockCall GOOGL Fount",
+          "fGOOGL"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallPosition",
+        "address": "0x1F5ad96d79Ac102493978F64B6e16611796C0957",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0x58daec3116aae6D93017bAAea7749052E8a04fA7",
+          "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+          "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+          {
+            "currency0": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+            "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "fee": 3000,
+            "tickSpacing": 60,
+            "hooks": "0x0000000000000000000000000000000000000000"
+          },
+          "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+          "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallFount",
+        "address": "0x7fDe9b84e9d339D7Ae46C396463D04ba293F0778",
+        "args": [
+          {
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "equityToken": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+            "position": "0x1F5ad96d79Ac102493978F64B6e16611796C0957",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "swapAdapter": "0x8D253e81F34bCe6dD816B8c3EF2Ef7412edDDded",
+            "feeRouter": "0xe5Ea565A80FD2FCC45DdE19621F8894177C468A3",
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "keeper": "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+            "heldValueCap": "25000000000"
+          },
+          "StockCall SPY Fount",
+          "fSPY"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallRegistry",
+        "address": "0x4008aAe2093c8D2f2D3c4651FDcb4d6aFa5Dcde1",
+        "args": [
+          "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+          [
+            {
+              "target": "0x175df85671660E4275e82993411b930C85BadD33",
+              "kind": 0,
+              "ticker": "TSLA"
+            },
+            {
+              "target": "0x23dCE8cD8FedB864E45B7033691f17D0f401A6cB",
+              "kind": 0,
+              "ticker": "NVDA"
+            },
+            {
+              "target": "0xBB92859B1A4Fa9E71f3A5850769C1335c3B47650",
+              "kind": 0,
+              "ticker": "AAPL"
+            },
+            {
+              "target": "0x29365bc8D3EcfEA5a26Aba1fb998431483872E7e",
+              "kind": 0,
+              "ticker": "PLTR"
+            },
+            {
+              "target": "0x9eF11928aB81517169302539a0C543E7a86324d7",
+              "kind": 0,
+              "ticker": "META"
+            },
+            {
+              "target": "0x3070B51A0b5E23C6A58D3CF213936ad9ab22C405",
+              "kind": 0,
+              "ticker": "GOOGL"
+            },
+            {
+              "target": "0x7fDe9b84e9d339D7Ae46C396463D04ba293F0778",
+              "kind": 0,
+              "ticker": "SPY"
+            }
+          ]
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallBuyBurn",
+        "address": "0x943DFa6D33422EA876803e5f7bc692e58b57d21f",
+        "args": [
+          "0x8366a39CC670B4001A1121B8F6A443A643e40951",
+          "0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044",
+          0,
+          200,
+          "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+          "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+          "0x2854431E7066a9afDd3c2dce15D386B5cdDCe845",
+          "50000000000000000",
+          3600,
+          "0x0000000000000000000000000000000000000000"
+        ]
+      },
+      {
+        "contract": "src/StockCall.sol:StockCallArena",
+        "address": "0x002Ba816fF5e927867503ae6D3537f94CEf45bf8",
+        "args": [
+          {
+            "admin": "0xAB76D0D2f714b34a62A53b5B37a4A5EADA560153",
+            "guardian": "0xC74619A795F0FD9c63be9A35D2d3d72eC10C1d12",
+            "v3Factory": "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA",
+            "usdg": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+            "oracle": "0x0244C1FF5ffe1EDD2030F313201F40271D64Fc7E",
+            "feeSink": "0x943DFa6D33422EA876803e5f7bc692e58b57d21f",
+            "feeBps": 500,
+            "guardTicks": 300,
+            "minStake": "500000000000000",
+            "maxStake": "100000000000000000",
+            "roundCap": "1000000000000000000",
+            "weekdaySchema": 1,
+            "weekendSchema": 2,
+            "weekdayHours": "1329227995784915872903807060280344572",
+            "assets": [
+              {
+                "id": 1,
+                "pool": "0x52e65B17fB6E5BA00Ed806f37Afcd2DaA50271Ca",
+                "guard": 0
+              },
+              {
+                "id": 2,
+                "pool": "0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3",
+                "guard": 1
+              },
+              {
+                "id": 3,
+                "pool": "0x34D0dC122CF9A8Eb296fC5e0D3A233625D7d19b7",
+                "guard": 1
+              }
+            ],
+            "schemas": [
+              {
+                "id": 1,
+                "questions": [
+                  {
+                    "kind": 0,
+                    "options": 2,
+                    "assets": [
+                      2,
+                      0,
+                      0
+                    ],
+                    "lines": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "margin": 12,
+                    "absMove": false
+                  },
+                  {
+                    "kind": 1,
+                    "options": 3,
+                    "assets": [
+                      2,
+                      3,
+                      1
+                    ],
+                    "lines": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "margin": 20,
+                    "absMove": false
+                  },
+                  {
+                    "kind": 2,
+                    "options": 4,
+                    "assets": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "lines": [
+                      10,
+                      25,
+                      50
+                    ],
+                    "margin": 2,
+                    "absMove": true
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "questions": [
+                  {
+                    "kind": 0,
+                    "options": 2,
+                    "assets": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "lines": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "margin": 3,
+                    "absMove": false
+                  },
+                  {
+                    "kind": 2,
+                    "options": 4,
+                    "assets": [
+                      1,
+                      0,
+                      0
+                    ],
+                    "lines": [
+                      10,
+                      25,
+                      50
+                    ],
+                    "margin": 2,
+                    "absMove": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 };
 

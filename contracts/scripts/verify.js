@@ -61,9 +61,12 @@ async function verifyDeployment(ethers, d, { requireMultisigs = false } = {}) {
 
   console.log("Timelock");
   const tl = await ethers.getContractAt("TimelockController", d.timelock);
-  const artifact = await require("hardhat").artifacts.readArtifact("StockCallTimelock");
-  const code = await ethers.provider.getCode(d.timelock);
-  check(ethers.keccak256(code) === ethers.keccak256(artifact.deployedBytecode), "bytecode is StockCallTimelock: OpenZeppelin's TimelockController, unchanged");
+  // Deployments from before the StockCall names used TimelockController itself; both are OpenZeppelin's code unchanged.
+  const { artifacts } = require("hardhat");
+  const code = ethers.keccak256(await ethers.provider.getCode(d.timelock));
+  const named = ethers.keccak256((await artifacts.readArtifact("StockCallTimelock")).deployedBytecode);
+  const plain = ethers.keccak256((await artifacts.readArtifact("TimelockController")).deployedBytecode);
+  check(code === named || code === plain, `bytecode is ${code === named ? "StockCallTimelock: " : ""}OpenZeppelin's TimelockController, unchanged`);
   const delay = await tl.getMinDelay();
   check(delay >= MIN_DELAY, `minimum delay ${delay / 3600n}h (at least 48h)`);
   const R = { admin: await tl.DEFAULT_ADMIN_ROLE(), proposer: await tl.PROPOSER_ROLE(), executor: await tl.EXECUTOR_ROLE(), canceller: await tl.CANCELLER_ROLE() };

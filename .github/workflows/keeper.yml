@@ -1,0 +1,78 @@
+# Runs the StockCall keeper.
+#   :45 every hour  --hour: waits for the Arena reveal window (:55 to :00), reveals, then settles right after the
+#                   hour, inside the 30-minute guard window; Fount upkeep and both burns run in every cycle
+#   :10 every hour  --once: a backup settle in case the :45 run started late or not at all
+# GitHub can start scheduled runs late. For a guaranteed reveal and settle, also run the keeper in loop mode on a
+# machine that stays on (keeper/README.md).
+# Repo settings (Settings > Secrets and variables > Actions):
+#   secret   KEEPER_PRIVATE_KEY   set by: node tools/wallet.js keeper-secret
+#   secret   ROBINHOOD_RPC_URL    optional private RPC (also set by keeper-secret when launch.env has one)
+#   secret   REVEAL_INBOX_URL     optional: the site's sealed-reveal inbox; REVEAL_INBOX_TOKEN its bearer token
+#   variable KEEPER_LIVE          0 = dry run (simulate and log only), 1 = send transactions
+name: Keeper
+
+on:
+  schedule:
+    - cron: "45 * * * *"
+    - cron: "10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Skip until StockCall is deployed
+        id: deployed
+        run: |
+          if [ -f contracts/deployments/robinhood.json ]; then echo "yes=1" >> "$GITHUB_OUTPUT"; else echo "No contracts/deployments/robinhood.json yet: nothing to keep."; fi
+
+      - uses: actions/setup-node@v4
+        if: steps.deployed.outputs.yes == '1'
+        with:
+          node-version: 22
+
+      - name: Restore compiled contracts
+        if: steps.deployed.outputs.yes == '1'
+        id: artifacts
+        uses: actions/cache@v4
+        with:
+          path: contracts/artifacts
+          key: artifacts-${{ hashFiles('contracts/src/**', 'contracts/hardhat.config.js', 'contracts/package-lock.json') }}
+
+      - name: Compile contracts (ABIs for the keeper)
+        if: steps.deployed.outputs.yes == '1' && steps.artifacts.outputs.cache-hit != 'true'
+        working-directory: contracts
+        run: npm ci --no-audit --no-fund && npx hardhat compile
+
+      - name: Install keeper
+        if: steps.deployed.outputs.yes == '1'
+        working-directory: keeper
+        run: npm ci --no-audit --no-fund
+
+      - name: Run one keeper cycle
+        if: steps.deployed.outputs.yes == '1'
+        working-directory: keeper
+        env:
+          KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+          RPC_URL: ${{ secrets.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com' }}
+          KEEPER_NETWORK: robinhood
+          KEEPER_CONFIG: actions.config.json
+          REVEAL_INBOX_URL: ${{ secrets.REVEAL_INBOX_URL }}
+          REVEAL_INBOX_TOKEN: ${{ secrets.REVEAL_INBOX_TOKEN }}
+          HOUR_MODE_SECONDS: "1500"
+          DRY_RUN: ${{ vars.KEEPER_LIVE == '1' && '0' || '1' }}
+        run: |
+          if [ "$DRY_RUN" = "1" ]; then echo "KEEPER_LIVE is not 1: dry run, nothing will be sent."; fi
+          if [ "${{ github.event.schedule }}" = "10 * * * *" ]; then node src/index.js --once; else node src/index.js --once --hour; fi

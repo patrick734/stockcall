@@ -194,6 +194,12 @@ async function main() {
     },
   ]);
   out.arena = await arena.getAddress();
+  // The keeper's public key: the site seals players' reveals to it (keeper/src/sealed.js). Locally, Hardhat's
+  // well-known account #3, which is the local keeper.
+  out.keeperRevealKey = LIVE
+    ? process.env.KEEPER_REVEAL_KEY || null
+    : new ethers.SigningKey("0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6").compressedPublicKey;
+  if (LIVE && !out.keeperRevealKey) console.log("  note: KEEPER_REVEAL_KEY is not set, so the site cannot offer automatic reveals until it is added");
 
   if (!LIVE) await seedLocal(out, env, rest);
 

@@ -43,8 +43,10 @@ function keeperSecret() {
   }
 
   writeEnvValue("KEEPER_ADDRESS", wallet.address);
+  // Public, not secret: the site seals players' reveals to this key so only the keeper can open them.
+  writeEnvValue("KEEPER_REVEAL_KEY", wallet.signingKey.compressedPublicKey);
   console.log(`Keeper key stored as the KEEPER_PRIVATE_KEY secret of ${repo}. It is not saved anywhere else.`);
-  console.log(`KEEPER_ADDRESS=${wallet.address} written to launch.env`);
+  console.log(`KEEPER_ADDRESS=${wallet.address} and its public KEEPER_REVEAL_KEY written to launch.env`);
   console.log(`Keeper address: ${wallet.address}`);
   console.log("Send it 0.01 ETH on Robinhood Chain for gas.");
 }

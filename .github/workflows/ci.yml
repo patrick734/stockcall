@@ -32,6 +32,15 @@ jobs:
       - run: npx hardhat test
       - name: Local deploy passes on-chain verification
         run: npx hardhat run scripts/deploy.js
+      - name: Keeper unit tests (read ABIs from contracts/artifacts)
+        working-directory: keeper
+        run: npm ci && npm test
+      - name: Keeper smoke tests on a local node (Founts, then the Arena)
+        run: |
+          npx hardhat node --port 8547 > node.log 2>&1 &
+          for i in $(seq 1 30); do curl -s -o /dev/null http://127.0.0.1:8547 && break; sleep 1; done
+          npx hardhat run scripts/deploy.js --network keeper
+          cd ../keeper && npm run smoke && npm run arena-smoke
 
   launch:
     runs-on: ubuntu-latest

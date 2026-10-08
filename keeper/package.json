@@ -1,0 +1,21 @@
+{
+  "name": "@stockcall/keeper",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "StockCall keeper: Arena reveals, settling and $CALL buy-and-burn; Fount rebalance, harvest, fee routing and drawdown",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "once": "node src/index.js --once",
+    "test": "node scripts/unit.js",
+    "smoke": "node scripts/smoke.js",
+    "arena-smoke": "node scripts/arena-smoke.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ethers": "^6.13.0"
+  }
+}

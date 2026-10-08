@@ -2,9 +2,8 @@
 
 Everything runs from the repo folder on your Mac. Nothing here ever asks you to paste a private key into a file.
 
-> **Status:** the contracts, tests and deploy toolkit are ready. The keeper (settles Arena rounds, relays reveals,
-> runs both buy-and-burns) and the website are the next build step. Do not deploy to mainnet before those exist
-> and before an independent audit of the contracts in [SECURITY.md](SECURITY.md).
+> **Status:** the contracts, the deploy toolkit and the keeper are ready. The website is the next build step. Do not
+> deploy to mainnet before it exists and before an independent audit of the contracts in [SECURITY.md](SECURITY.md).
 
 ## What "rug-proof" means here
 

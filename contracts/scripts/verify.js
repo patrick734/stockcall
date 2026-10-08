@@ -175,6 +175,10 @@ async function verifyDeployment(ethers, d, { requireMultisigs = false } = {}) {
   }
   check((await arena.weekdayHours()) === cards.weekdayBitmap(), "weekday card Monday 02:00 to Friday 23:00 UTC, ETH-only card otherwise");
   check(!(await arena.paused()), "not paused");
+  if (d.keeperRevealKey) {
+    const addr = ethers.computeAddress(d.keeperRevealKey);
+    check(same(addr, d.roles.keeper), `reveal key belongs to the keeper ${d.roles.keeper}`);
+  } else console.log("  info  no keeperRevealKey: the site cannot seal reveals for the keeper relay");
 
   console.log("Buy-and-burn");
   const burn = await ethers.getContractAt("BuyBurn", d.buyBurn);

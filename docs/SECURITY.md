@@ -95,9 +95,15 @@ burned token ($CALL instead of $FOUNT), which `DrawdownRetire` takes at construc
 - **Wagering law.** Staked forecast rounds may be restricted in some jurisdictions.
 - **No external audit yet.**
 
+## Deployed names
+
+`src/StockCall.sol` gives every deployed contract its StockCall name (`StockCallArena is Arena`, `StockCallFount is
+Fount`, and so on). Each only passes its constructor arguments through and adds no code, so audit the contract it
+names. `StockCallTimelock` is OpenZeppelin's `TimelockController` unchanged, and `verify.js` checks its bytecode.
+
 ## Audit scope
 
-In scope: `src/Arena.sol`, `src/BuyBurn.sol`, `src/Fount.sol`, `src/FountOracle.sol`, `src/DrawdownRetire.sol`,
+In scope: `src/StockCall.sol`, `src/Arena.sol`, `src/BuyBurn.sol`, `src/Fount.sol`, `src/FountOracle.sol`, `src/DrawdownRetire.sol`,
 `src/FeeRouter.sol`, `src/FountRegistry.sol`, `src/governance/GovernanceChecks.sol`, `src/v4/*`, and the deploy
 order in `scripts/deploy.js`.
 

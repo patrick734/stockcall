@@ -77,6 +77,10 @@ fi
 step "Publishing addresses to the app"
 node scripts/export-abis.js
 
+step "Publishing the source on the explorer (shows the StockCall contract names)"
+sleep 20
+npx hardhat run scripts/publish-source.js --network robinhood || echo "Not every contract is published yet: run ./publish-source.sh in a few minutes."
+
 step "Deployed"
 cat <<'EOF'
 Addresses: contracts/deployments/robinhood.json
@@ -84,6 +88,7 @@ Addresses: contracts/deployments/robinhood.json
 Next:
   1. git add -A && git commit -m "Mainnet deployment" && git push      (Vercel publishes the live site)
   2. ./verify.sh                                                        (post the output: proof the deployer holds nothing)
+     ./publish-source.sh                                                (if any contract was not published on the explorer yet)
   3. Empty the dev wallet's leftover ETH into the next step's wallet; it has no other use now.
   4. Launch $CALL on Pons, then: ./set-token.sh <token address>
   5. Keeper: GitHub > Actions > "Keeper" > Run workflow (dry run). When it looks healthy, set KEEPER_LIVE=1.

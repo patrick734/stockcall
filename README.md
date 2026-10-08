@@ -30,10 +30,14 @@ contracts/   Hardhat project (Solidity 0.8.26, OpenZeppelin 5.1, Uniswap v4 MIT 
   src/BuyBurn.sol          Arena fees and forfeits -> $CALL (Pons pool) -> burned
   src/Fount*.sol, src/v4/  the Founts (from StockFount), DrawdownRetire burns $CALL
   src/governance/          GovernanceChecks (constructor checks), Timelock (OZ TimelockController)
+  src/StockCall.sol        the deployed names: StockCallArena, StockCallFount, StockCallBuyBurn, StockCallBurn,
+                           StockCallOracle, StockCallFeeRouter, StockCallRegistry, StockCallPosition,
+                           StockCallSwapAdapter, StockCallTimelock (each adds nothing to the contract it names)
   lib/score.js             reference round math, to the wei with Arena.sol
   test/unit/               212 unit tests: Arena, BuyBurn, parity, the real oracle, and the Fount suite
   scripts/deploy.js        deploys both products under one timelock, then verifies
   scripts/verify.js        read-only on-chain proof that the deployer holds no power
+  scripts/publish-source.js  publishes the source on Blockscout, so the explorer shows the StockCall names
 launch/      launches $CALL on the Pons V2 launchpad from the dev wallet
 tools/       encrypted keystores for wallets imported from MetaMask (~/.stockcall/keystores)
 keeper/      keeper bot: reveals sealed Arena entries, settles rounds, flushes and burns, Fount upkeep (GitHub Actions)

@@ -102,6 +102,10 @@ git add -A && git commit -m "Mainnet deployment" && git push
 
 Post the `./verify.sh` output.
 
+The deploy also publishes the source of every contract on the Robinhood Chain explorer, so each one shows its
+StockCall name (StockCallArena, StockCallFount, StockCallBuyBurn, ...) with readable code. If any was not published
+yet (the explorer can lag a minute), run `./publish-source.sh`.
+
 ## 5b. Website on Vercel
 
 1. vercel.com > Add New > Project > import `patrick734/stockcall`. Set **Root Directory** to `app`. Deploy.

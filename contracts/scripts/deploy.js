@@ -28,10 +28,17 @@ const TIMELOCK_DELAY = 48 * 3600;
 const usdgUnits = (n) => ethers.parseUnits(String(n), 6);
 const wad = (n) => ethers.parseEther(String(n));
 
+// Every StockCall contract deployed, with its constructor arguments, so scripts/publish-source.js can publish the
+// source on the block explorer (that is what makes the explorer show the StockCall contract names).
+const SOURCES = [];
+const STOCKCALL = /^StockCall/;
+
 async function deploy(name, args = []) {
   const c = await ethers.deployContract(name, args);
   await c.waitForDeployment();
-  console.log(`  ${name.padEnd(18)} ${await c.getAddress()}`);
+  const address = await c.getAddress();
+  console.log(`  ${name.padEnd(22)} ${address}`);
+  if (STOCKCALL.test(name)) SOURCES.push({ contract: `src/StockCall.sol:${name}`, address, args });
   return c;
 }
 
@@ -46,7 +53,7 @@ async function main() {
   const chainId = Number((await ethers.provider.getNetwork()).chainId);
   const out = { network: network.name, chainId, deployer: deployer.address, roles, startBlock: await ethers.provider.getBlockNumber(), founts: {} };
 
-  const timelock = await deploy("TimelockController", [TIMELOCK_DELAY, [roles.admin], [roles.admin], ethers.ZeroAddress]);
+  const timelock = await deploy("StockCallTimelock", [TIMELOCK_DELAY, [roles.admin], [roles.admin], ethers.ZeroAddress]);
   out.timelock = await timelock.getAddress();
 
   const env = LIVE ? liveEnv() : await localEnv(out.timelock);
@@ -71,7 +78,7 @@ async function main() {
     const t = env.equity[ticker];
     feedInits.push(LIVE ? await equityFeedInit(ethers, ticker) : localFeedInit(t));
   }
-  const oracle = await deploy("FountOracle", [
+  const oracle = await deploy("StockCallOracle", [
     out.timelock,
     env.sequencerFeed,
     LIVE ? await usdgInit(ethers) : localUsdgInit(env.usdgFeed),
@@ -91,7 +98,7 @@ async function main() {
       { currency0: ethers.ZeroAddress, currency1: env.usdg, fee: eth.fee, tickSpacing: eth.tickSpacing, hooks: ethers.ZeroAddress },
       ...tickers.map((ticker) => poolKey(env.equity[ticker].address, env.usdg, env.equity[ticker].fee, env.equity[ticker].tickSpacing)),
     ];
-    swap = await deploy("V4SwapAdapter", [out.timelock, config.uniswap.poolManager, env.usdg, [config.pons.hook], pools]);
+    swap = await deploy("StockCallSwapAdapter", [out.timelock, config.uniswap.poolManager, env.usdg, [config.pons.hook], pools]);
   } else {
     swap = env.swap;
   }
@@ -101,7 +108,7 @@ async function main() {
   // Small per-run buys: a fresh Pons pool holds a few ETH, so large buys move its price a lot.
   const inputTokens = [env.usdg, ...tickers.map((t) => env.equity[t].address)];
   const inputLimits = [usdgUnits(config.launch.drawdownMaxUsdgPerRun), ...tickers.map(() => wad(config.launch.drawdownMaxEquityPerRun))];
-  const drawdown = await deploy("DrawdownRetire", [
+  const drawdown = await deploy("StockCallBurn", [
     out.burnToken ?? ethers.ZeroAddress,
     out.swapAdapter,
     out.timelock,
@@ -113,14 +120,14 @@ async function main() {
   ]);
   out.drawdownRetire = await drawdown.getAddress();
 
-  const feeRouter = await deploy("FeeRouter", [out.timelock, out.drawdownRetire]);
+  const feeRouter = await deploy("StockCallFeeRouter", [out.timelock, out.drawdownRetire]);
   out.feeRouter = await feeRouter.getAddress();
 
   const listings = [];
   for (const ticker of tickers) {
     const t = env.equity[ticker];
     const position = LIVE
-      ? await deploy("FountPositionV4", [
+      ? await deploy("StockCallPosition", [
           config.uniswap.poolManager,
           config.uniswap.positionManager,
           config.uniswap.permit2,
@@ -131,7 +138,7 @@ async function main() {
         ])
       : await deploy("MockPosition", [t.address, env.usdg, usdgUnits(t.price)]);
 
-    const fount = await deploy("Fount", [
+    const fount = await deploy("StockCallFount", [
       {
         usdg: env.usdg,
         equityToken: t.address,
@@ -153,14 +160,14 @@ async function main() {
     out.founts[ticker] = { fount: await fount.getAddress(), position: await position.getAddress(), equityToken: t.address, name: t.name };
   }
 
-  const registry = await deploy("FountRegistry", [out.timelock, listings]);
+  const registry = await deploy("StockCallRegistry", [out.timelock, listings]);
   out.registry = await registry.getAddress();
 
   // ---------------------------------------------------------------- Arena
   const a = config.arena;
   const arenaEnv = LIVE ? await liveArenaEnv() : await localArenaEnv(env, out.oracle);
   Object.assign(out, { v3Factory: arenaEnv.v3Factory, poolManager: arenaEnv.poolManager, ponsHook: arenaEnv.ponsHook, assets: arenaEnv.assets });
-  const buyBurn = await deploy("BuyBurn", [
+  const buyBurn = await deploy("StockCallBuyBurn", [
     arenaEnv.poolManager,
     arenaEnv.ponsHook,
     config.pons.poolFee,
@@ -173,7 +180,7 @@ async function main() {
     out.burnToken ?? ethers.ZeroAddress,
   ]);
   out.buyBurn = await buyBurn.getAddress();
-  const arena = await deploy("Arena", [
+  const arena = await deploy("StockCallArena", [
     {
       admin: out.timelock,
       guardian: roles.guardian,
@@ -202,6 +209,8 @@ async function main() {
   if (LIVE && !out.keeperRevealKey) console.log("  note: KEEPER_REVEAL_KEY is not set, so the site cannot offer automatic reveals until it is added");
 
   if (!LIVE) await seedLocal(out, env, rest);
+
+  out.sources = JSON.parse(JSON.stringify(SOURCES, (_, v) => (typeof v === "bigint" ? v.toString() : v)));
 
   // Only a real mainnet deploy may write robinhood.json; a fork rehearsal always writes fork.json.
   const label = network.name === "robinhood" ? "robinhood" : LIVE ? "fork" : network.name;

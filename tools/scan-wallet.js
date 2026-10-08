@@ -10,7 +10,7 @@ const wallet = ethers.getAddress(process.argv[2]);
 const p = new ethers.JsonRpcProvider(RPC);
 const IMPL = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 const ADMIN = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
-const VIEWS = ["owner()(address)", "admin()(address)", "name()(string)", "symbol()(string)", "decimals()(uint8)", "totalSupply()(uint256)", "paused()(bool)", "pendingOwner()(address)", "getMinDelay()(uint256)", "token()(address)", "treasury()(address)", "feeRecipient()(address)", "devWallet()(address)", "maxWallet()(uint256)", "maxTx()(uint256)", "buyTax()(uint256)", "sellTax()(uint256)", "tradingEnabled()(bool)"];
+const VIEWS = ["owner()(address)", "admin()(address)", "name()(string)", "symbol()(string)", "decimals()(uint8)", "totalSupply()(uint256)", "paused()(bool)", "pendingOwner()(address)", "getMinDelay()(uint256)", "token()(address)", "treasury()(address)", "feeRecipient()(address)", "devWallet()(address)", "maxWallet()(uint256)", "maxTx()(uint256)", "buyTax()(uint256)", "sellTax()(uint256)", "tradingEnabled()(bool)", "deployer()(address)", "creator()(address)", "description()(string)", "logo()(string)"];
 async function view(addr, sig) {
   const [fn, out] = sig.split(")(");
   const iface = new ethers.Interface([`function ${fn}) view returns (${out}`]);
@@ -31,6 +31,12 @@ function selectors(code) {
     if (op >= 0x60 && op <= 0x7f) i += (op - 0x5f) * 2;
   }
   return [...s];
+}
+const KNOWN = new Set("0x06fdde03 0x095ea7b3 0x18160ddd 0x23b872dd 0x313ce567 0x70a08231 0x95d89b41 0xa9059cbb 0xdd62ed3e 0x42966c68 0x79cc6790 0x40c10f19 0x4e487b71 0xec442f05 0x4a1406b1 0xe602df05 0x7dc7a0d9 0x391434e3 0x4b637e8f".split(" "));
+function text(hex) {
+  const t = Buffer.from(hex.slice(2), "hex").toString("utf8").replace(/[^\x20-\x7e]+/g, " ").trim();
+  const words = t.split(" ").filter((w) => w.length >= 4);
+  return words.join("").length > 8 ? `\n      text: ${words.join(" ").slice(0, 600)}` : "";
 }
 async function source(addr) {
   try {
@@ -56,7 +62,19 @@ async function report(addr, how) {
     if (r !== undefined) console.log(`${v.split("(")[0]} = ${r}`);
   }
   console.log(await source(addr));
-  console.log(`selectors ${selectors(code).join(" ")}`);
+  const sels = selectors(code);
+  console.log(`selectors ${sels.join(" ")}`);
+  for (const sel of sels) {
+    if (KNOWN.has(sel)) continue;
+    try {
+      const r = await p.call({ to: addr, data: sel });
+      if (r !== "0x") console.log(`probe ${sel} -> ${r.length > 1400 ? r.slice(0, 1400) + "..." : r}${text(r)}`);
+    } catch {}
+  }
+  for (const who of ["deployer()(address)", "creator()(address)", "owner()(address)"]) {
+    const w = await view(addr, who);
+    if (w && BigInt(w)) await scanWallet(ethers.getAddress(w), `${who.split("(")[0]} of ${addr}`);
+  }
   if (BigInt(impl)) await report(ethers.getAddress(impl), `implementation of ${addr}`);
 }
 async function tx(hash) {
@@ -74,15 +92,21 @@ async function tx(hash) {
   for (const a of seen) await report(a, `touched by tx ${hash.slice(0, 10)}`);
 }
 const done = new Set();
-(async () => {
-  const nonce = await p.getTransactionCount(wallet);
-  const bal = await p.getBalance(wallet);
-  console.log(`wallet ${wallet} nonce ${nonce} balance ${ethers.formatEther(bal)} ETH`);
-  await report(wallet, "the address itself is a contract");
-  for (let n = 0; n < nonce; n++) {
-    const a = ethers.getCreateAddress({ from: wallet, nonce: n });
-    await report(a, `deployed by wallet, nonce ${n}`);
+const scanned = new Set();
+async function scanWallet(w, why) {
+  if (scanned.has(w)) return;
+  scanned.add(w);
+  const nonce = await p.getTransactionCount(w);
+  const bal = await p.getBalance(w);
+  const isContract = (await p.getCode(w)) !== "0x";
+  console.log(`\n##### ${w} (${why}) ${isContract ? "CONTRACT" : "WALLET"} nonce ${nonce} balance ${ethers.formatEther(bal)} ETH`);
+  if (isContract) await report(w, "the address itself is a contract");
+  for (let n = isContract ? 1 : 0; n < nonce; n++) {
+    await report(ethers.getCreateAddress({ from: w, nonce: n }), `deployed by ${w.slice(0, 8)}, nonce ${n}`);
   }
+}
+(async () => {
+  await scanWallet(wallet, "the address you gave");
   for (const extra of process.argv.slice(3)) {
     if (extra.length === 66) await tx(extra);
     else await report(ethers.getAddress(extra), "extra");

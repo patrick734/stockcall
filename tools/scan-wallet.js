@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Read-only look at every contract a wallet deployed: nonce scan for CREATE deployments, proxy slots, common
 // views (owner, name, taxes...), explorer source status and function selectors. Sends nothing, needs no key.
-//   node tools/scan-wallet.js <wallet> [extra contract addresses...]
+//   node tools/scan-wallet.js <wallet> [extra contract addresses or transaction hashes...]
+// A transaction hash prints who sent it, what it called, and reads every contract it touched or created.
 const { ethers } = require("./lib").ethers();
 const RPC = process.env.RPC || "https://rpc.mainnet.chain.robinhood.com";
 const EXP = "https://robinhoodchain.blockscout.com";
@@ -40,6 +41,8 @@ async function source(addr) {
   } catch (e) { return `source: ${e.message}`; }
 }
 async function report(addr, how) {
+  if (done.has(addr)) return;
+  done.add(addr);
   const code = await p.getCode(addr);
   if (code === "0x") return;
   console.log(`\n=== ${addr}  (${how})  ${(code.length - 2) / 2} bytes`);
@@ -56,14 +59,33 @@ async function report(addr, how) {
   console.log(`selectors ${selectors(code).join(" ")}`);
   if (BigInt(impl)) await report(ethers.getAddress(impl), `implementation of ${addr}`);
 }
+async function tx(hash) {
+  const t = await p.getTransaction(hash);
+  const r = await p.getTransactionReceipt(hash);
+  if (!t || !r) return console.log(`\ntx ${hash} not found`);
+  console.log(`\n### tx ${hash}\nfrom ${t.from} to ${t.to ?? "(contract creation)"} value ${ethers.formatEther(t.value)} ETH status ${r.status} block ${r.blockNumber}`);
+  console.log(`calls selector ${t.data.slice(0, 10)} with ${(t.data.length - 10) / 2} bytes of arguments`);
+  console.log(`input ${t.data.slice(0, 2000)}${t.data.length > 2000 ? "..." : ""}`);
+  const seen = new Set([t.to, r.contractAddress].filter(Boolean).map((a) => ethers.getAddress(a)));
+  for (const l of r.logs) {
+    seen.add(ethers.getAddress(l.address));
+    console.log(`log ${l.address} topics ${l.topics.join(",")} data ${l.data.slice(0, 200)}`);
+  }
+  for (const a of seen) await report(a, `touched by tx ${hash.slice(0, 10)}`);
+}
+const done = new Set();
 (async () => {
   const nonce = await p.getTransactionCount(wallet);
   const bal = await p.getBalance(wallet);
   console.log(`wallet ${wallet} nonce ${nonce} balance ${ethers.formatEther(bal)} ETH`);
+  await report(wallet, "the address itself is a contract");
   for (let n = 0; n < nonce; n++) {
     const a = ethers.getCreateAddress({ from: wallet, nonce: n });
     await report(a, `deployed by wallet, nonce ${n}`);
   }
-  for (const extra of process.argv.slice(3)) await report(ethers.getAddress(extra), "extra");
+  for (const extra of process.argv.slice(3)) {
+    if (extra.length === 66) await tx(extra);
+    else await report(ethers.getAddress(extra), "extra");
+  }
   console.log("\ndone");
 })().catch((e) => { console.error(e); process.exit(1); });

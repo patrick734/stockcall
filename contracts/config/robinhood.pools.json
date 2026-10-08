@@ -1,204 +1,204 @@
 {
   "AAPL": {
-    "oracleUsd": 334.10767468,
-    "updatedAt": "2026-10-05T13:58:49.000Z",
+    "oracleUsd": 336.40932687,
+    "updatedAt": "2026-10-07T16:46:39.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0xc748f4671a867db48b552f6b7650bf3255e05f80f00e3f7aad1b17ccb7898fdb",
-      "spotUsdg": 333.8179,
-      "offBps": -9,
-      "liquidity": "647758848029207532"
+      "spotUsdg": 336.6056,
+      "offBps": 6,
+      "liquidity": "586259884624794531"
     }
   },
   "AMD": {
-    "oracleUsd": 631.975,
-    "updatedAt": "2026-10-05T15:54:04.000Z",
+    "oracleUsd": 638.96499999,
+    "updatedAt": "2026-10-08T07:03:45.000Z",
     "pool": {
       "fee": 10000,
       "tickSpacing": 200,
       "poolId": "0xde9f85fdd9e05a943a52f2c69ffafe3064a3287df03d02c9b431bc92d4781274",
-      "spotUsdg": 627.7806,
-      "offBps": -66,
-      "liquidity": "258442393591822054"
+      "spotUsdg": 642.5119,
+      "offBps": 56,
+      "liquidity": "266354559471395898"
     }
   },
   "AMZN": {
-    "oracleUsd": 251.7849,
-    "updatedAt": "2026-10-05T19:55:04.000Z",
+    "oracleUsd": 259.295,
+    "updatedAt": "2026-10-08T06:24:57.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0xd32646872e6712af8cf778e34b6bbef1d2ae0bddd83764e1b07333518ad59333",
-      "spotUsdg": 252.3502,
-      "offBps": 22,
-      "liquidity": "6243385292437571"
+      "spotUsdg": 259.449,
+      "offBps": 6,
+      "liquidity": "6322552616545351"
     }
   },
   "CRCL": {
-    "oracleUsd": 83.61,
-    "updatedAt": "2026-10-05T18:28:33.000Z",
+    "oracleUsd": 80.03,
+    "updatedAt": "2026-10-08T07:12:45.000Z",
     "pool": null
   },
   "GME": {
-    "oracleUsd": 25.2558,
-    "updatedAt": "2026-10-05T20:04:53.000Z",
+    "oracleUsd": 24.075,
+    "updatedAt": "2026-10-08T09:35:11.000Z",
     "pool": {
       "fee": 10000,
       "tickSpacing": 200,
       "poolId": "0x3d436b4fdc532c61a0bf15d6cae80a66eb8f28ee9daec34dbec4b5bc9964063b",
-      "spotUsdg": 25.4895,
-      "offBps": 93,
+      "spotUsdg": 24.4061,
+      "offBps": 138,
       "liquidity": "1224312427658506"
     }
   },
   "GOOGL": {
-    "oracleUsd": 345.85705711,
-    "updatedAt": "2026-10-05T19:53:56.000Z",
+    "oracleUsd": 348.91264956,
+    "updatedAt": "2026-10-08T07:04:44.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0xd4ecb79fdc521d7725d22b33ed43cb4e47aa96bfad76aa29577e3151f723ac5e",
-      "spotUsdg": 346.5865,
-      "offBps": 21,
-      "liquidity": "537936509384219456"
+      "spotUsdg": 349.8111,
+      "offBps": 26,
+      "liquidity": "477179802533657461"
     }
   },
   "INTC": {
-    "oracleUsd": 115.994,
-    "updatedAt": "2026-10-05T19:56:30.000Z",
+    "oracleUsd": 110.803,
+    "updatedAt": "2026-10-08T08:07:56.000Z",
     "pool": {
       "fee": 10000,
       "tickSpacing": 200,
       "poolId": "0xf2e329e631d0fb315a5c563ee3a9120f24822b5ef6c502a91cb56b174d5d8c22",
-      "spotUsdg": 116.6555,
-      "offBps": 57,
-      "liquidity": "437929822325174908"
+      "spotUsdg": 111.9105,
+      "offBps": 100,
+      "liquidity": "310834280275955034"
     }
   },
   "META": {
-    "oracleUsd": 744.8580925,
-    "updatedAt": "2026-10-05T14:25:37.000Z",
+    "oracleUsd": 720.89012184,
+    "updatedAt": "2026-10-07T19:41:43.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0x5875d407a42965b0e768c8925cea290e06fa50603ef34fc99eb92a1050e6ae36",
-      "spotUsdg": 743.8874,
-      "offBps": -13,
-      "liquidity": "2604948141076718761"
+      "spotUsdg": 723.1986,
+      "offBps": 32,
+      "liquidity": "2332508121986147002"
     }
   },
   "MSFT": {
-    "oracleUsd": 525.83405489,
-    "updatedAt": "2026-10-05T19:54:38.000Z",
+    "oracleUsd": 528.88831563,
+    "updatedAt": "2026-10-08T06:36:44.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0x9194a557b6a6bb2236b49ea7e2bbccec5d3eeb705aef00903be4b3de1d949579",
-      "spotUsdg": 525.6739,
-      "offBps": -3,
-      "liquidity": "127381687885981475"
+      "spotUsdg": 529.704,
+      "offBps": 15,
+      "liquidity": "84608943661553862"
     }
   },
   "MSTR": {
-    "oracleUsd": 164.055,
-    "updatedAt": "2026-10-05T19:56:01.000Z",
+    "oracleUsd": 153.245,
+    "updatedAt": "2026-10-08T09:32:46.000Z",
     "pool": null
   },
   "MU": {
-    "oracleUsd": 1059.98130527,
-    "updatedAt": "2026-10-05T18:52:15.000Z",
+    "oracleUsd": 1073.17029204,
+    "updatedAt": "2026-10-08T08:19:00.000Z",
     "pool": {
       "fee": 10000,
       "tickSpacing": 200,
       "poolId": "0x6fa3ee0048e78bf0a513eb0ab56f482944a767c21db990fcf555605e69f05659",
-      "spotUsdg": 1068.1675,
-      "offBps": 77,
-      "liquidity": "94238581074658051"
+      "spotUsdg": 1078.9496,
+      "offBps": 54,
+      "liquidity": "88049666303301007"
     }
   },
   "NVDA": {
-    "oracleUsd": 239.03014289,
-    "updatedAt": "2026-10-05T19:56:03.000Z",
+    "oracleUsd": 235.99779415,
+    "updatedAt": "2026-10-08T07:02:53.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0x3bb34a44f1b2b5f32c034c38a53065a521a47b199700fa9bd19d60985ff24bf1",
-      "spotUsdg": 239.3412,
-      "offBps": 13,
-      "liquidity": "445625912576938676"
+      "spotUsdg": 236.2186,
+      "offBps": 9,
+      "liquidity": "638990553914748395"
     }
   },
   "PLTR": {
-    "oracleUsd": 188.93,
-    "updatedAt": "2026-10-05T16:49:35.000Z",
+    "oracleUsd": 198.375,
+    "updatedAt": "2026-10-08T09:07:48.000Z",
     "pool": {
       "fee": 10000,
       "tickSpacing": 200,
       "poolId": "0xee430ee1003e1985e1828a01b9a20dad67ad4302994fe2abb4a173de4ac54623",
-      "spotUsdg": 189.4785,
-      "offBps": 29,
-      "liquidity": "632865301971621538"
+      "spotUsdg": 196.7682,
+      "offBps": -81,
+      "liquidity": "263465672373788778"
     }
   },
   "QQQ": {
-    "oracleUsd": 756.13452136,
-    "updatedAt": "2026-10-05T17:45:25.000Z",
+    "oracleUsd": 756.09949682,
+    "updatedAt": "2026-10-08T06:21:02.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0xf9568ec0cba6e9ba30d9daabbf3e807813b8852e5737b7d83ea06529c73c9758",
-      "spotUsdg": 754.473,
-      "offBps": -22,
+      "spotUsdg": 758.2576,
+      "offBps": 29,
       "liquidity": "27185714519916"
     }
   },
   "SNDK": {
-    "oracleUsd": 1701.21,
-    "updatedAt": "2026-10-05T19:28:41.000Z",
+    "oracleUsd": 1675.895,
+    "updatedAt": "2026-10-08T07:03:49.000Z",
     "pool": {
       "fee": 10000,
       "tickSpacing": 200,
       "poolId": "0x2707cb88a6a40fa0f948f58958051ba097d6f6a3cf7f87929bd68ccc5becea24",
-      "spotUsdg": 1701.4315,
-      "offBps": 1,
-      "liquidity": "41819474535095865"
+      "spotUsdg": 1686.1473,
+      "offBps": 61,
+      "liquidity": "38745730675811521"
     }
   },
   "SPCX": {
-    "oracleUsd": 170.88,
-    "updatedAt": "2026-10-05T20:29:12.000Z",
+    "oracleUsd": 167.475,
+    "updatedAt": "2026-10-08T06:19:05.000Z",
     "pool": {
       "fee": 10000,
       "tickSpacing": 200,
       "poolId": "0xcb6ffbcc84359535c2cc0a5688c0a76520ea6e0a4820fddd3ac8d7880e576370",
-      "spotUsdg": 170.3142,
-      "offBps": -33,
-      "liquidity": "153452696972870873"
+      "spotUsdg": 167.2509,
+      "offBps": -13,
+      "liquidity": "165540289177413606"
     }
   },
   "SPY": {
-    "oracleUsd": 776.16661047,
-    "updatedAt": "2026-10-05T17:45:09.000Z",
+    "oracleUsd": 775.89569584,
+    "updatedAt": "2026-10-07T13:39:05.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0xfe2a80bb5618fd14984b92ca6d45bf5ba67443ddb1435e28b2e48df2fc1526cd",
-      "spotUsdg": 774.8079,
-      "offBps": -18,
-      "liquidity": "6467084055630275307"
+      "spotUsdg": 777.9613,
+      "offBps": 27,
+      "liquidity": "5215397649476080614"
     }
   },
   "TSLA": {
-    "oracleUsd": 378.316,
-    "updatedAt": "2026-10-05T19:55:32.000Z",
+    "oracleUsd": 376.33,
+    "updatedAt": "2026-10-07T14:04:28.000Z",
     "pool": {
       "fee": 3000,
       "tickSpacing": 60,
       "poolId": "0x8517f8071ae5b831b738052f12125e8e3d6c158b78728aa44ce3b25e5104d32e",
-      "spotUsdg": 379.3734,
-      "offBps": 28,
-      "liquidity": "475374332625057493"
+      "spotUsdg": 376.0468,
+      "offBps": -8,
+      "liquidity": "775299549227264870"
     }
   }
 }

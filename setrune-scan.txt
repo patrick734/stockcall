@@ -1,0 +1,9 @@
+wallet 0xc3F40AB7A3B7025Fa544895d7aF5164572CC7A4f nonce 1 balance 0.0 ETH
+
+=== 0xc3F40AB7A3B7025Fa544895d7aF5164572CC7A4f  (the address itself is a contract)  3248 bytes
+name = Dots Trade
+symbol = Dots
+decimals = 18
+totalSupply = 1000000000000000000000000000
+source: explorer 403
+selectors 0x06fdde03 0x095ea7b3 0x18160ddd 0x23b872dd 0x313ce567 0x42966c68 0x536dac9b 0x53cd512a 0x70a08231 0x7165485d 0x7284e416 0x79cc6790 0x95d89b41 0xa9059cbb 0xabb1dc44 0xd5f39488 0xdd62ed3e 0xfb7f21eb 0x4e487b71 0x4a1406b1 0xe602df05 0x7dc7a0d9 0x391434e3 0xec442f05 0x4b637e8f

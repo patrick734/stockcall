@@ -25,18 +25,27 @@ async function get(url) {
   }
 }
 
-/** Every 0x address in a page and in the scripts it loads (same site, up to 60 files). */
-async function crawl(start, notes) {
+/** Every 0x address in a page and in the scripts, JSON and API responses it references (same site, up to 200
+ *  files). Each file is also saved under site/ so the front end can be read. */
+async function crawl(start, notes, OUT) {
   const found = new Map();
   const base = new URL(start);
   const queue = [start];
   const seen = new Set();
-  while (queue.length && seen.size < 60) {
+  while (queue.length && seen.size < 200) {
     const url = queue.shift();
     if (seen.has(url)) continue;
     seen.add(url);
     const text = await get(url);
     if (!text) continue;
+    try {
+      const u = new URL(url);
+      let rel = safe(decodeURIComponent(u.pathname) + (u.search ? "_" + u.search.slice(1) : ""));
+      if (!rel || rel.endsWith("/")) rel += "index.html";
+      const f = path.join(OUT, "site", rel);
+      fs.mkdirSync(path.dirname(f), { recursive: true });
+      fs.writeFileSync(f, text.length > 5e6 ? text.slice(0, 5e6) : text);
+    } catch {}
     for (const m of text.matchAll(/0x[a-fA-F0-9]{40}(?![a-fA-F0-9])/g)) {
       const a = ethers.getAddress(m[0].toLowerCase());
       if (!found.has(a)) {
@@ -44,8 +53,12 @@ async function crawl(start, notes) {
         found.set(a, text.slice(Math.max(0, i - 80), i).replace(/\s+/g, " ").slice(-80));
       }
     }
-    for (const m of text.matchAll(/(?:src|href)=["']([^"']+\.js[^"']*)["']|["'](\/_next\/static\/[^"']+\.js)["']|["']((?:\.\/|\/)assets\/[^"']+\.js)["']/g)) {
-      const ref = m[1] || m[2] || m[3];
+    // Scripts, chunks, JSON and API paths: anything quoted that looks like one, plus Next.js/Vite chunk names.
+    const refs = [];
+    for (const m of text.matchAll(/["'`]((?:https?:\/\/[^"'`\s]+|\.{0,2}\/[^"'`\s<>]*|[A-Za-z0-9_\-./]+)\.(?:m?js|json)(?:\?[^"'`\s]*)?)["'`]/g)) refs.push(m[1]);
+    for (const m of text.matchAll(/["'`](\/api\/[^"'`\s<>]*)["'`]/g)) refs.push(m[1]);
+    for (const m of text.matchAll(/static\/chunks\/[A-Za-z0-9_\-./\[\]]+\.js/g)) refs.push("/_next/" + m[0]);
+    for (const ref of refs) {
       try {
         const u = new URL(ref, url);
         if (u.host === base.host && !seen.has(u.href)) queue.push(u.href);
@@ -100,7 +113,7 @@ function safe(p) {
   const notes = [];
   const candidates = new Map();
   for (const a of args) {
-    if (a.startsWith("http")) for (const [k, v] of await crawl(a, notes)) candidates.set(k, v);
+    if (a.startsWith("http")) for (const [k, v] of await crawl(a, notes, OUT)) candidates.set(k, v);
     else candidates.set(ethers.getAddress(a), "given");
   }
 

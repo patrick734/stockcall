@@ -101,7 +101,10 @@ async function scanWallet(w, why) {
   const isContract = (await p.getCode(w)) !== "0x";
   console.log(`\n##### ${w} (${why}) ${isContract ? "CONTRACT" : "WALLET"} nonce ${nonce} balance ${ethers.formatEther(bal)} ETH`);
   if (isContract) await report(w, "the address itself is a contract");
-  for (let n = isContract ? 1 : 0; n < nonce; n++) {
+  const limit = Number(process.env.MAX_NONCE || 200);
+  if (nonce > limit) console.log(`(busy address: checking only its first ${limit} of ${nonce} transactions for deployments; set MAX_NONCE to raise)`);
+  for (let n = isContract ? 1 : 0; n < Math.min(nonce, limit); n++) {
+    if (n % 25 === 0) process.stderr.write(`  ${w.slice(0, 8)}: ${n}/${Math.min(nonce, limit)}\r`);
     await report(ethers.getCreateAddress({ from: w, nonce: n }), `deployed by ${w.slice(0, 8)}, nonce ${n}`);
   }
 }

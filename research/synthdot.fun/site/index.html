@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SYNTH · coins with a face</title>
+<meta name="description" content="Launch a coin. Give it a face. Let it post. The launchpad where every coin gets its own character, posting reels to pump it 24/7.">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="SYNTH">
+<meta property="og:description" content="Launch a coin. Give it a face. Let it post.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -10 130 162'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='90' y2='142' gradientUnits='userSpaceOnUse'%3E%3Cstop offset='0' stop-color='%23E4FF3D'/%3E%3Cstop offset='.55' stop-color='%233DFF7A'/%3E%3Cstop offset='1' stop-color='%2300B88A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 54C0 22 20 0 45 0S90 22 90 54L90 82C90 95 84 99 79 93C75 88 72 91 72 99L72 132C72 143 60 143 60 132L60 104C60 99 56 99 54 103C47 110 21 110 11 102C3 96 0 88 0 78Z' fill='url(%23g)'/%3E%3Cellipse cx='34' cy='52' rx='5' ry='7.5'/%3E%3Cellipse cx='56' cy='52' rx='5' ry='7.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000;--bg1:#07090A;--bg2:#0C0F0E;--bg3:#121614;--line:#1A211D;--line2:#24302A;
+  --tx:#F4F7F5;--tx2:#A3ABA7;--tx3:#69716D;
+  --g1:#E4FF3D;--g2:#3DFF7A;--g3:#00B88A;--gt:#D7FFE3;
+  --grad:linear-gradient(135deg,#E4FF3D 0%,#3DFF7A 55%,#00B88A 100%);
+  --gradx:linear-gradient(90deg,#E4FF3D,#3DFF7A);
+  --red:#FF5C7A;--r:16px;--r2:22px;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --side:248px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--tx)}
+img{display:block;max-width:100%}
+::selection{background:#3DFF7A;color:#000}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.9}
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+
+/* sidebar */
+.side{position:fixed;top:0;left:0;bottom:0;width:var(--side);border-right:1px solid var(--line);background:rgba(3,4,4,.82);backdrop-filter:blur(14px);display:flex;flex-direction:column;padding:22px 14px;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 26px}
+.brand svg{width:30px;height:auto;flex:none}
+.brand b{font-size:26px;font-weight:900;letter-spacing:-1.2px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:13px;padding:11px 12px;border-radius:12px;color:var(--tx2);font-weight:600;font-size:15px;transition:.15s;position:relative}
+.nav a svg{width:20px;height:20px;flex:none}
+.nav a:hover{color:var(--tx);background:var(--bg2)}
+.nav a.on{color:var(--tx);background:linear-gradient(90deg,rgba(61,255,122,.12),rgba(61,255,122,0) 80%)}
+.nav a.on::before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--gradx)}
+.nav a.launch{color:var(--tx)}
+.nav a.launch .ico{width:26px;height:26px;border-radius:8px;background:var(--grad);display:grid;place-items:center;margin-left:-3px;margin-right:-3px}
+.nav a.launch .ico svg{width:16px;height:16px;color:#000}
+.nav .dot{position:absolute;right:14px;width:7px;height:7px;border-radius:50%;background:var(--g2);box-shadow:0 0 10px var(--g2)}
+.side-bottom{margin-top:auto;display:flex;flex-direction:column;gap:9px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:46px;padding:0 18px;border-radius:13px;font-weight:700;font-size:15px;transition:.15s;white-space:nowrap}
+.btn svg{width:18px;height:18px}
+.btn-pri{background:var(--grad);color:#021006}
+.btn-pri:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-pri:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+.btn-sec{background:var(--bg2);border:1px solid var(--line2);color:var(--tx)}
+.btn-sec:hover{border-color:#355042;background:var(--bg3)}
+.btn-white{background:#fff;color:#000}
+.btn-white:hover{background:#E8FFEF}
+.btn-sm{height:36px;padding:0 13px;font-size:13.5px;border-radius:10px}
+.btn-block{width:100%}
+
+/* topbar */
+.main{flex:1;margin-left:var(--side);min-width:0}
+.top{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:12px;padding:14px 32px;background:rgba(0,0,0,.72);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top .mbrand{display:none}
+.ca{display:flex;align-items:center;gap:10px;height:40px;padding:0 6px 0 14px;border:1px solid var(--line2);border-radius:12px;background:var(--bg1);font-family:var(--mono);font-size:13px;max-width:100%;min-width:0}
+.ca .lbl{color:var(--g2);font-weight:700;letter-spacing:1px}
+.ca .val{color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ca .val.muted{color:var(--tx3)}
+.ca button{height:30px;padding:0 11px;border-radius:8px;background:var(--bg3);border:1px solid var(--line2);font-family:var(--sans);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:6px;flex:none}
+.ca button:hover{border-color:var(--g3)}
+.ca button svg{width:14px;height:14px}
+.top .sp{flex:1}
+.xbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line2);background:var(--bg1);display:grid;place-items:center;flex:none}
+.xbtn:hover{border-color:#fff}
+.xbtn svg{width:17px;height:17px}
+.wallet{height:40px;font-size:14px}
+.wallet .wdot{width:8px;height:8px;border-radius:50%;background:var(--g2);box-shadow:0 0 8px var(--g2)}
+.view{padding:30px 32px 80px;max-width:1440px}
+
+/* common */
+.h1{font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1.02}
+.sub{color:var(--tx2);font-size:16px;line-height:1.55;margin-top:10px;max-width:640px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:2.5px;color:var(--tx3);text-transform:uppercase}
+.gtext{background:var(--gradx);-webkit-background-clip:text;background-clip:text;color:transparent}
+.panel{background:rgba(9,12,11,.86);border:1px solid var(--line);border-radius:var(--r2)}
+.pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;border:1px solid #1F4D2C;background:#08140C;color:var(--gt);font-size:13px;font-weight:600}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--g2);box-shadow:0 0 8px var(--g2)}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:7px;background:var(--bg3);border:1px solid var(--line2);font-size:12px;font-weight:600;color:var(--tx2)}
+.tag.g{color:#021006;background:var(--gradx);border:0}
+.tag.warn{color:#FFE38A;border-color:#4A3F12;background:#151105}
+.mono{font-family:var(--mono)}
+.muted{color:var(--tx3)}
+.row{display:flex;align-items:center;gap:10px}
+.empty{padding:56px 24px;text-align:center;border:1px dashed var(--line2);border-radius:var(--r2);background:rgba(7,9,9,.6)}
+.empty h3{font-size:20px;font-weight:800;margin-bottom:8px}
+.empty p{color:var(--tx2);margin-bottom:20px;font-size:15px}
+.sec-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:44px 0 16px}
+.sec-title h2{font-size:24px;font-weight:850;letter-spacing:-.8px;display:flex;align-items:center;gap:12px}
+.live{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--g2);letter-spacing:1px}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--g2);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(61,255,122,.6)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(61,255,122,0)}}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-radius:28px;border:1px solid var(--line);background:radial-gradient(1200px 500px at 80% 30%,rgba(61,255,122,.10),transparent 60%),linear-gradient(180deg,#070A08,#030504);padding:56px 56px 50px;display:grid;grid-template-columns:1.1fr 1fr;gap:30px;min-height:520px}
+.hero::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(61,255,122,.10) 1px,transparent 1px);background-size:24px 24px;mask-image:radial-gradient(600px 400px at 75% 50%,#000,transparent);pointer-events:none}
+.hero h1{font-size:76px;font-weight:900;letter-spacing:-4px;line-height:.96;margin:22px 0 22px}
+.hero p{color:var(--tx2);font-size:18px;line-height:1.55;max-width:520px}
+.hero .cta{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap}
+.hero .cta .btn{height:54px;padding:0 24px;font-size:16px;border-radius:15px}
+.hero .trust{display:flex;gap:22px;margin-top:34px;color:var(--tx3);font-size:13.5px;flex-wrap:wrap}
+.hero .trust span{display:flex;align-items:center;gap:7px}
+.hero .trust svg{width:15px;height:15px;color:var(--g2)}
+.phones{position:relative;z-index:1;min-height:420px}
+.phone{position:absolute;width:232px;height:420px;border-radius:34px;background:#050706;border:1px solid #22302A;padding:10px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.phone .scr{position:relative;width:100%;height:100%;border-radius:26px;overflow:hidden}
+.phone.p1{left:6%;top:38px;transform:rotate(-9deg);opacity:.75}
+.phone.p2{left:32%;top:0;z-index:3;animation:float 6s ease-in-out infinite}
+.phone.p3{left:60%;top:46px;transform:rotate(8deg);opacity:.75}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.float-chip{position:absolute;z-index:4;display:flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:999px;background:rgba(8,14,10,.92);border:1px solid #1F4D2C;font-size:13px;font-weight:600;color:var(--gt);backdrop-filter:blur(8px)}
+.float-chip svg{width:15px;height:15px;color:var(--g2)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.stat{padding:20px 22px;display:flex;align-items:center;gap:16px}
+.stat .si{width:44px;height:44px;border-radius:12px;background:#0B1A10;border:1px solid #1F4D2C;display:grid;place-items:center;color:var(--g2);flex:none}
+.stat .si svg{width:20px;height:20px}
+.stat b{display:block;font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-1px}
+.stat span{color:var(--tx3);font-size:13px}
+
+/* marquee */
+.marq{margin-top:18px;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:rgba(7,9,9,.7);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.marq .tr{display:flex;gap:34px;padding:13px 0;width:max-content;animation:marq 40s linear infinite}
+.marq:hover .tr{animation-play-state:paused}
+@keyframes marq{to{transform:translateX(-50%)}}
+.marq .it{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--tx2);white-space:nowrap}
+.marq .it img,.marq .it .av{width:24px;height:24px;border-radius:50%}
+.marq .it b{color:var(--tx);font-weight:800}
+
+/* stories */
+.stories{display:flex;gap:18px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
+.stories::-webkit-scrollbar{display:none}
+.story{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none;width:78px;cursor:pointer}
+.story .ring{width:72px;height:72px;border-radius:50%;padding:3px;background:var(--grad)}
+.story .ring.add{background:none;border:1.5px dashed var(--line2);display:grid;place-items:center;color:var(--tx2)}
+.story .ring.add svg{width:24px;height:24px}
+.story .ring img{width:100%;height:100%;border-radius:50%;border:3px solid #000;object-fit:cover}
+.story span{font-size:12.5px;color:var(--tx2);max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.chip{height:38px;padding:0 15px;border-radius:999px;border:1px solid var(--line2);background:var(--bg1);font-weight:600;font-size:14px;color:var(--tx2);display:inline-flex;align-items:center;gap:7px}
+.chip svg{width:15px;height:15px}
+.chip:hover{color:var(--tx);border-color:#355042}
+.chip.on{background:#fff;color:#000;border-color:#fff}
+.search{flex:1;min-width:200px;max-width:360px;margin-left:auto;display:flex;align-items:center;gap:9px;height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg1)}
+.search svg{width:16px;height:16px;color:var(--tx3)}
+.search input{flex:1;background:none;border:0;outline:0;font-size:14px}
+.sel{height:40px;padding:0 12px;border-radius:12px;border:1px solid var(--line2);background:var(--bg1);font-size:14px;font-weight:600;outline:0}
+
+/* coin grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.coin{overflow:hidden;border-radius:var(--r2);border:1px solid var(--line);background:rgba(8,11,10,.92);transition:.18s;cursor:pointer;display:flex;flex-direction:column}
+.coin:hover{border-color:#2B4A36;transform:translateY(-3px)}
+.coin .cover{position:relative;height:230px;padding:16px;display:flex;flex-direction:column;overflow:hidden}
+.coin .cover .bgimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.35;filter:blur(2px) saturate(1.1);transform:scale(1.1)}
+.coin .cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.55))}
+.coin .cover>*{position:relative;z-index:1}
+.coin .cover .tp{display:flex;justify-content:space-between;align-items:center}
+.coin .tick{height:26px;padding:0 9px;border-radius:8px;background:rgba(0,0,0,.55);font-family:var(--mono);font-weight:700;font-size:12.5px;display:inline-flex;align-items:center}
+.coin .age{height:26px;padding:0 8px;border-radius:8px;background:rgba(0,0,0,.55);font-family:var(--mono);font-size:12px;display:inline-flex;align-items:center}
+.coin .cap{margin-top:auto;font-size:28px;font-weight:900;letter-spacing:-1.2px;line-height:1.02;text-shadow:0 2px 20px rgba(0,0,0,.4);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.coin .star{width:32px;height:32px;border-radius:9px;background:rgba(0,0,0,.55);display:grid;place-items:center}
+.coin .star svg{width:16px;height:16px}
+.coin .star.on svg{fill:var(--g2);color:var(--g2)}
+.coin .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.idrow{display:flex;align-items:center;gap:11px;min-width:0}
+.av{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:none;background:var(--bg3);border:2px solid #000;box-shadow:0 0 0 2px #22392B}
+.idrow .nm{min-width:0}
+.idrow .nm b{display:block;font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idrow .nm span{display:block;font-size:13px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.meta div{padding:9px 11px;border-radius:11px;background:var(--bg2);border:1px solid var(--line)}
+.meta small{display:block;font-size:11px;color:var(--tx3);margin-bottom:3px}
+.meta b{font-family:var(--mono);font-size:13px;font-weight:600}
+
+/* post card (generated) */
+.post{position:relative;overflow:hidden;border-radius:14px;aspect-ratio:1;padding:12px;display:flex;flex-direction:column;cursor:pointer}
+.post .pt{font-weight:900;letter-spacing:-.6px;line-height:1.05;margin-top:auto;font-size:19px}
+.post .ph{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700}
+.post .ph img{width:20px;height:20px;border-radius:50%}
+.post .ptk{position:absolute;bottom:10px;right:10px;font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.4)}
+
+/* coin page */
+.cp{display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start}
+.cp-head{padding:28px;display:flex;gap:24px;align-items:center}
+.cp-head .big{width:120px;height:120px;border-radius:50%;padding:4px;background:var(--grad);flex:none}
+.cp-head .big img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:4px solid #000}
+.cp-head h1{font-size:36px;font-weight:900;letter-spacing:-1.5px}
+.cp-head .counts{display:flex;gap:26px;margin:12px 0}
+.cp-head .counts b{font-family:var(--mono);font-size:18px;display:block}
+.cp-head .counts span{color:var(--tx3);font-size:12.5px}
+.cp-head p{color:var(--tx2);line-height:1.5;font-size:15px;max-width:620px}
+.cp-head .catch{color:var(--g2);font-weight:600;margin-top:6px}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.posts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 28px 28px}
+.side-card{padding:22px}
+.side-card h3{font-size:15px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border:0}
+.kv span{color:var(--tx3)}
+.kv b{font-weight:600;text-align:right;word-break:break-all}
+.tabs{display:flex;gap:6px;padding:0 28px 18px}
+
+/* reels */
+.reels{display:grid;grid-template-columns:1fr auto 340px 60px;gap:24px;align-items:center;justify-content:center;min-height:calc(100vh - 140px)}
+.reel{position:relative;height:min(calc(100vh - 150px),760px);aspect-ratio:9/16;width:auto;max-width:calc(100vw - 32px);border-radius:28px;overflow:hidden;border:1px solid #22302A;margin:0 auto;box-shadow:0 30px 90px rgba(0,0,0,.6)}
+.reel .rbg{position:absolute;inset:0}
+.reel .rbg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4;filter:blur(3px);transform:scale(1.15)}
+.reel .rbg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15) 0%,rgba(0,0,0,.05) 40%,rgba(0,0,0,.75) 100%)}
+.reel .prog{position:absolute;top:14px;left:16px;right:16px;height:3px;border-radius:3px;background:rgba(255,255,255,.18);z-index:3;overflow:hidden}
+.reel .prog i{display:block;height:100%;width:0;background:#fff}
+.reel .rh{position:absolute;top:30px;left:18px;right:18px;z-index:3;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14.5px}
+.reel .rh img{width:34px;height:34px;border-radius:50%;border:2px solid #fff}
+.reel .rh small{color:rgba(255,255,255,.7);font-weight:500}
+.reel .rc{position:absolute;inset:0;z-index:2;padding:96px 28px 120px;display:flex;flex-direction:column;justify-content:center}
+.reel .rc .face{width:110px;height:110px;border-radius:50%;object-fit:cover;border:4px solid rgba(255,255,255,.9);margin-bottom:22px;animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.reel .rc h2{font-size:46px;font-weight:900;letter-spacing:-2px;line-height:1;text-shadow:0 4px 30px rgba(0,0,0,.35);animation:rin .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes rin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.reel .rc .tk{margin-top:22px;align-self:flex-start;height:40px;padding:0 16px;border-radius:999px;border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;font-weight:900;font-size:18px}
+.reel .rf{position:absolute;left:18px;right:18px;bottom:18px;z-index:3}
+.reel .rf p{font-size:14px;margin-bottom:6px}
+.reel .rf small{font-size:12.5px;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:6px}
+.reel .rf small svg{width:13px;height:13px}
+.reel .rf .bar{margin-top:12px;height:50px;border-radius:14px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 14px;font-family:var(--mono);font-weight:700;font-size:14px}
+.ractions{display:flex;flex-direction:column;gap:18px;align-self:end;padding-bottom:30px}
+.ract{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--tx2)}
+.ract .b{width:52px;height:52px;border-radius:50%;border:1px solid var(--line2);background:var(--bg2);display:grid;place-items:center;color:var(--tx)}
+.ract .b:hover{border-color:var(--g3)}
+.ract .b.g{background:var(--grad);border:0;color:#000}
+.ract .b svg{width:21px;height:21px}
+.ract .b.on svg{fill:var(--g2);color:var(--g2)}
+.rnav{display:flex;flex-direction:column;gap:12px}
+.rnav button{width:50px;height:50px;border-radius:50%;border:1px solid var(--line2);background:var(--bg1);display:grid;place-items:center}
+.rnav button:hover{border-color:var(--g3)}
+.rnav svg{width:20px;height:20px}
+
+/* launch */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+.steps div{padding:16px 20px;font-size:14px;font-weight:600;color:var(--tx3);border-right:1px solid var(--line);display:flex;gap:9px;align-items:center}
+.steps div:last-child{border-right:0}
+.steps div i{font-style:normal;font-family:var(--mono);font-size:12px;width:26px;height:22px;border-radius:6px;background:var(--bg3);display:grid;place-items:center}
+.steps div.ok{color:var(--tx)}
+.steps div.ok i{background:var(--gradx);color:#000}
+.fsec{padding:28px;border-bottom:1px solid var(--line)}
+.fsec:last-child{border-bottom:0}
+.fsec h3{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:800;letter-spacing:-.4px}
+.fsec h3 i{font-style:normal;font-family:var(--mono);font-size:12.5px;width:34px;height:26px;border-radius:7px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--tx2)}
+.fsec h3 i.ok{background:var(--gradx);color:#000;border:0}
+.fsec>p{color:var(--tx3);font-size:14px;margin:6px 0 20px 46px}
+.drop{display:flex;align-items:center;gap:20px;padding:20px;border:1.5px dashed var(--line2);border-radius:18px;cursor:pointer;transition:.15s;background:rgba(7,9,9,.5)}
+.drop:hover,.drop.over{border-color:var(--g3);background:rgba(61,255,122,.04)}
+.drop .thumb{width:92px;height:92px;border-radius:18px;background:var(--bg3);display:grid;place-items:center;overflow:hidden;flex:none}
+.drop .thumb img{width:100%;height:100%;object-fit:cover}
+.drop .thumb svg{width:28px;height:28px;color:var(--tx2)}
+.drop b{font-size:17px;display:block;margin-bottom:5px}
+.drop span{color:var(--tx3);font-size:13.5px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field.full{grid-column:1/-1}
+.field label{display:flex;justify-content:space-between;font-size:14px;font-weight:700}
+.field label small{font-weight:500;color:var(--tx3);font-family:var(--mono);font-size:12px}
+.field label a{color:var(--g2);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.inp{height:50px;border-radius:13px;border:1px solid var(--line2);background:var(--bg1);padding:0 15px;font-size:15px;outline:0;transition:.15s;width:100%}
+.inp:focus{border-color:var(--g3);box-shadow:0 0 0 3px rgba(61,255,122,.1)}
+textarea.inp{height:96px;padding:13px 15px;resize:vertical;line-height:1.5}
+.inp.mono{font-family:var(--mono)}
+.inp-pre{position:relative}
+.inp-pre span{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--tx3);font-family:var(--mono)}
+.inp-pre .inp{padding-left:34px}
+.err{color:var(--red);font-size:12.5px;min-height:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{height:40px;padding:0 15px;border-radius:12px;border:1px solid var(--line2);background:var(--bg1);font-weight:600;font-size:14px;color:var(--tx2);display:inline-flex;align-items:center;gap:8px}
+.opt:hover{color:var(--tx);border-color:#355042}
+.opt.on{color:var(--tx);border-color:var(--g2);background:rgba(61,255,122,.08)}
+.arch{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.arch button{text-align:left;padding:15px 16px;border-radius:14px;border:1px solid var(--line2);background:var(--bg1);display:flex;gap:13px;align-items:center}
+.arch button:hover{border-color:#355042}
+.arch button.on{border-color:var(--g2);background:rgba(61,255,122,.07)}
+.arch .ai{width:36px;height:36px;border-radius:10px;background:var(--bg3);display:grid;place-items:center;flex:none;color:var(--g2)}
+.arch .ai svg{width:18px;height:18px}
+.arch b{display:block;font-size:15px}
+.arch span{display:block;font-size:12.5px;color:var(--tx3);margin-top:2px}
+.seg{display:inline-flex;padding:4px;border-radius:13px;background:var(--bg1);border:1px solid var(--line2);gap:2px;flex-wrap:wrap}
+.seg button{height:36px;padding:0 15px;border-radius:9px;font-weight:600;font-size:14px;color:var(--tx2)}
+.seg button.on{background:var(--bg3);color:var(--tx);box-shadow:inset 0 0 0 1px var(--line2)}
+.lp{display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:start}
+.sticky{position:sticky;top:90px;display:flex;flex-direction:column;gap:16px}
+.mphone{width:100%;max-width:330px;margin:0 auto;border-radius:40px;border:1px solid #22302A;background:#050706;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.mphone .scr{border-radius:30px;overflow:hidden;background:#000;min-height:560px;position:relative}
+.mphone .notch{width:110px;height:26px;border-radius:20px;background:#111;margin:10px auto 6px}
+.ig{padding:8px 16px 16px}
+.ig .top2{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px;margin-bottom:14px}
+.ig .prof{display:flex;align-items:center;gap:18px}
+.ig .prof .ring{width:82px;height:82px;border-radius:50%;padding:3px;background:var(--grad);flex:none}
+.ig .prof .ring img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid #000}
+.ig .cnt{display:flex;gap:16px;text-align:center;flex:1;justify-content:space-around}
+.ig .cnt b{display:block;font-size:15px}
+.ig .cnt span{font-size:11px;color:var(--tx2)}
+.ig .bio{margin-top:12px;font-size:13px;line-height:1.4}
+.ig .bio b{display:block}
+.ig .bio .l{color:#7FB4FF}
+.ig .btns{display:flex;gap:6px;margin-top:12px}
+.ig .btns span{flex:1;height:32px;border-radius:9px;display:grid;place-items:center;font-size:13px;font-weight:700;background:#1B1F1D}
+.ig .btns span.f{background:var(--grad);color:#000}
+.ig .gridp{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:14px -16px -16px}
+.ig .gridp .post{border-radius:0;padding:8px}
+.ig .gridp .post .pt{font-size:13px}
+.ig .gridp .post .ph{font-size:9px}
+.ig .gridp .post .ph img{width:14px;height:14px}
+.summary{padding:20px}
+.summary h3{font-size:15px;font-weight:800;margin-bottom:10px}
+.order{margin-top:14px;padding:14px;border-radius:13px;border:1px solid var(--line);background:var(--bg1)}
+.order .eyebrow{margin-bottom:8px;display:block}
+.order div{display:flex;gap:10px;align-items:center;font-size:13.5px;padding:4px 0}
+.order div i{font-style:normal;width:22px;height:22px;border-radius:6px;background:var(--bg3);display:grid;place-items:center;font-family:var(--mono);font-size:11.5px}
+
+/* calls */
+.calls{display:grid;grid-template-columns:1fr 330px;gap:22px;align-items:start}
+.chat{display:flex;flex-direction:column;height:calc(100vh - 240px);min-height:520px}
+.msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:18px}
+.msg{display:flex;gap:12px}
+.msg .mav{width:38px;height:38px;border-radius:50%;flex:none}
+.msg .mh{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:5px}
+.msg .mh b{font-family:var(--mono)}
+.msg .mh .dev{font-size:10.5px;font-weight:800;color:#021006;background:var(--gradx);padding:1px 6px;border-radius:5px}
+.msg .mh small{color:var(--tx3)}
+.msg .mt{font-size:15px;line-height:1.45;color:var(--tx);word-break:break-word}
+.callcard{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:13px;border:1px solid #2B5C38;background:rgba(61,255,122,.05);margin-bottom:8px;max-width:420px;cursor:pointer}
+.callcard img{width:34px;height:34px;border-radius:50%}
+.callcard b{font-weight:800}
+.callcard .called{margin-left:auto;color:var(--g2);font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:4px}
+.callcard .called svg{width:13px;height:13px}
+.composer{border-top:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:10px}
+.composer .row2{display:flex;gap:10px}
+.composer .inp{height:48px}
+.composer small{color:var(--tx3);font-size:12px}
+.rules li{list-style:none;padding:9px 0 9px 22px;position:relative;color:var(--tx2);font-size:14px;line-height:1.45;border-bottom:1px solid var(--line)}
+.rules li:last-child{border:0}
+.rules li::before{content:"";position:absolute;left:4px;top:16px;width:7px;height:7px;border-radius:50%;background:var(--g2)}
+.mc{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
+.mc:last-child{border:0}
+.mc img{width:36px;height:36px;border-radius:50%}
+.mc .n{color:var(--tx3);font-family:var(--mono);width:16px}
+
+/* docs */
+.docs{display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:start}
+.toc{position:sticky;top:90px;display:flex;flex-direction:column;gap:2px}
+.toc .eyebrow{margin:16px 12px 8px}
+.toc a{padding:8px 12px;border-radius:9px;color:var(--tx2);font-size:14px;font-weight:500}
+.toc a:hover{color:var(--tx);background:var(--bg2)}
+.dsec{padding:30px 32px;margin-bottom:16px}
+.dsec h2{font-size:28px;font-weight:850;letter-spacing:-1px;margin:6px 0 14px}
+.dsec p{color:var(--tx2);line-height:1.65;font-size:15.5px;margin-bottom:12px}
+.dsec ul{margin:8px 0 8px 2px}
+.dsec li{list-style:none;color:var(--tx2);line-height:1.6;padding:6px 0 6px 24px;position:relative;font-size:15px}
+.dsec li::before{content:"";position:absolute;left:4px;top:15px;width:8px;height:8px;border-radius:2px;background:var(--gradx)}
+.dsec li b{color:var(--tx)}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:20px 0 6px}
+.flow div{padding:16px;border-radius:14px;border:1px solid var(--line2);background:var(--bg1)}
+.flow div i{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--g2);display:block;margin-bottom:8px}
+.flow div b{display:block;font-size:15px;margin-bottom:4px}
+.flow div span{font-size:12.5px;color:var(--tx3)}
+.faq{border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;padding:18px 4px;font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:22px;color:var(--g2);font-weight:500;transition:.2s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{padding:0 4px 18px;color:var(--tx2);line-height:1.6;font-size:15px;margin:0}
+.callout{display:flex;gap:12px;padding:15px 17px;border-radius:14px;border:1px solid #4A3F12;background:#120F05;color:#FFE38A;font-size:14px;line-height:1.5;margin-top:10px}
+.callout svg{width:18px;height:18px;flex:none;margin-top:1px}
+
+/* features */
+.feats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.feat{padding:22px}
+.feat .fi{width:42px;height:42px;border-radius:12px;background:#0B1A10;border:1px solid #1F4D2C;display:grid;place-items:center;color:var(--g2);margin-bottom:16px}
+.feat .fi svg{width:20px;height:20px}
+.feat b{display:block;font-size:16.5px;margin-bottom:8px;letter-spacing:-.3px}
+.feat p{color:var(--tx2);font-size:14px;line-height:1.55}
+
+/* footer */
+.foot{margin-top:70px;padding-top:34px;border-top:1px solid var(--line);display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:24px}
+.foot .brand{padding:0 0 12px}
+.foot p{color:var(--tx3);font-size:13.5px;line-height:1.55;max-width:300px}
+.foot h4{font-family:var(--mono);font-size:11.5px;letter-spacing:2px;color:var(--tx3);margin-bottom:14px;font-weight:600}
+.foot a{display:block;color:var(--tx2);font-size:14px;padding:5px 0}
+.foot a:hover{color:var(--tx)}
+.disc{grid-column:1/-1;border-top:1px solid var(--line);padding-top:20px;color:var(--tx3);font-size:12.5px;line-height:1.55}
+
+/* modal + toast */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal.on{display:flex}
+.modal .box{width:min(480px,100%);padding:30px;border-radius:26px;border:1px solid var(--line2);background:#070A08;text-align:center;animation:pop .3s cubic-bezier(.2,.9,.3,1.2);max-height:92vh;overflow:auto}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.modal .box h2{font-size:28px;font-weight:900;letter-spacing:-1px;margin:16px 0 8px}
+.modal .box p{color:var(--tx2);line-height:1.55;font-size:15px}
+.modal .box .bigav{width:110px;height:110px;margin:0 auto;border-radius:50%;padding:4px;background:var(--grad)}
+.modal .box .bigav img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:4px solid #000}
+.modal .acts{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:120;padding:13px 18px;border-radius:13px;background:#0B140E;border:1px solid #1F4D2C;color:var(--gt);font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.25s;display:flex;align-items:center;gap:9px;max-width:90vw}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast.bad{border-color:#5A2030;background:#160A0D;color:#FFC2CD}
+
+
+/* intro */
+#intro{position:fixed;inset:0;z-index:300;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;cursor:pointer}
+#intro.out{animation:introOut .6s cubic-bezier(.7,0,.3,1) forwards}
+@keyframes introOut{to{transform:translateY(-100%)}}
+#intro .glow{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(61,255,122,.18),transparent 65%);opacity:0;animation:fadeIn .6s .55s forwards}
+#intro svg{width:120px;height:auto;position:relative;animation:drop .75s cubic-bezier(.3,0,.4,1) both}
+@keyframes drop{0%{transform:translateY(-70vh) scale(.9,1.1)}60%{transform:translateY(0) scale(1.18,.82)}75%{transform:translateY(-14px) scale(.95,1.05)}88%{transform:translateY(0) scale(1.04,.97)}100%{transform:none}}
+#intro .drip{transform-origin:66px 96px;transform:scaleY(0);animation:drip .45s .7s cubic-bezier(.3,.7,.3,1) forwards}
+@keyframes drip{to{transform:scaleY(1)}}
+#intro .eye{transform-box:fill-box;transform-origin:center;animation:blink .22s 1.25s}
+@keyframes blink{50%{transform:scaleY(.1)}}
+#intro b{font-size:56px;font-weight:900;letter-spacing:-2.5px;opacity:0;transform:translateY(14px);animation:wm .45s 1s cubic-bezier(.2,.8,.2,1) forwards;position:relative}
+@keyframes wm{to{opacity:1;transform:none}}
+@keyframes fadeIn{to{opacity:1}}
+
+/* mobile nav */
+.mnav{display:none}
+@media (max-width:1180px){
+  .hero{grid-template-columns:1fr;padding:40px}
+  .phones{min-height:440px}
+  .feats{grid-template-columns:repeat(2,1fr)}
+  .reels{grid-template-columns:auto 60px;}
+  .reels .rpanel{display:none}
+  .reels .spacer{display:none}
+  .cp,.calls,.lp{grid-template-columns:1fr}
+  .sticky{position:static}
+  .flow{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:860px){
+  :root{--side:0px}
+  .side{display:none}
+  .top{padding:10px 16px;gap:8px}
+  .top .mbrand{display:flex;align-items:center;gap:8px;font-weight:900;font-size:20px;letter-spacing:-.8px}
+  .top .mbrand svg{width:22px}
+  .ca{height:36px;padding:0 4px 0 10px;font-size:12px;flex:1}
+  .ca .lbl{display:none}
+  .ca button span:not(.ic){display:none}
+  .ca button{width:30px;padding:0;justify-content:center}
+  .xbtn,.wallet{height:36px}
+  .xbtn{width:36px}
+  .wallet span.full,.wallet .mono{display:none}
+  .wallet{width:36px;padding:0}
+  .ca{flex:1 1 auto}
+  .drop{flex-wrap:wrap}
+  .drop>.btn{display:none}
+  .view{padding:18px 16px 110px}
+  .hero{padding:28px 20px;border-radius:22px;min-height:0}
+  .hero h1{font-size:46px;letter-spacing:-2.4px}
+  .hero p{font-size:16px}
+  .phones{min-height:380px;margin:0 -10px}
+  .phone{width:180px;height:330px;border-radius:28px}
+  .phone .scr{border-radius:21px}
+  .phone.p1{left:-2%}.phone.p2{left:calc(50% - 90px)}.phone.p3{left:auto;right:-2%}
+  .float-chip{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .stat{padding:16px}
+  .stat b{font-size:21px}
+  .feats{grid-template-columns:1fr}
+  .h1{font-size:34px}
+  .search{max-width:none;margin-left:0}
+  .grid{grid-template-columns:1fr 1fr;gap:10px}
+  .coin .cover{height:170px;padding:11px}
+  .coin .cap{font-size:19px}
+  .coin .body{padding:11px}
+  .meta{grid-template-columns:1fr}
+  .meta div:nth-child(n+2){display:none}
+  .av{width:34px;height:34px}
+  .reels{grid-template-columns:1fr;min-height:0}
+  .reels .rnav{display:none}
+  .ractions{flex-direction:row;justify-content:center;align-self:center;padding:0}
+  .reel{height:auto;width:calc(100vw - 32px);max-width:420px}
+  .reels>div:nth-child(2){flex-direction:column;align-items:center!important}
+  .reel .rc h2{font-size:36px}
+  .steps{grid-template-columns:1fr 1fr}
+  .steps div:nth-child(2){border-right:0}
+  .steps div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .fsec{padding:20px}
+  .fsec>p{margin-left:0}
+  .fgrid,.arch{grid-template-columns:1fr}
+  .cp-head{flex-direction:column;align-items:flex-start;padding:20px}
+  .posts{padding:0 16px 16px;gap:6px}
+  .tabs{padding:0 16px 14px}
+  .docs{grid-template-columns:1fr}
+  .toc{display:none}
+  .dsec{padding:22px 20px}
+  .flow{grid-template-columns:1fr}
+  .foot{grid-template-columns:1fr 1fr}
+  .foot>div:first-child{grid-column:1/-1}
+  .chat{height:calc(100vh - 250px)}
+  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(0,0,0,.9);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom));justify-content:space-around}
+  .mnav a{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--tx3);padding:4px 8px}
+  .mnav a svg{width:22px;height:22px}
+  .mnav a.on{color:var(--tx)}
+  .mnav a.plus .pi{width:42px;height:32px;border-radius:10px;background:var(--grad);display:grid;place-items:center;color:#000}
+  .mnav a.plus .pi svg{width:20px;height:20px}
+}
+</style>
+</head>
+<body>
+<div id="intro"><span class="glow"></span><svg viewBox="0 0 90 144" aria-hidden="true"><defs><linearGradient id="ig" x1="0" y1="0" x2="90" y2="142" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#E4FF3D"/><stop offset=".55" stop-color="#3DFF7A"/><stop offset="1" stop-color="#00B88A"/></linearGradient></defs><path d="M0 54C0 22 20 0 45 0S90 22 90 54L90 82C90 95 84 99 79 93C75 88 72 91 72 99L72 104L60 104C60 99 56 99 54 103C47 110 21 110 11 102C3 96 0 88 0 78Z" fill="url(#ig)"/><rect class="drip" x="60" y="94" width="12" height="49" rx="6" fill="url(#ig)"/><ellipse class="eye" cx="34" cy="52" rx="5" ry="7.5" fill="#000"/><ellipse class="eye" cx="56" cy="52" rx="5" ry="7.5" fill="#000"/></svg><b>synth</b></div>
+<canvas id="bg"></canvas>
+<div class="app">
+  <aside class="side">
+    <a class="brand" href="#/"><span class="logo"></span><b>synth</b></a>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-bottom">
+      <a class="btn btn-sec btn-block" id="sideX" target="_blank" rel="noopener"><span class="ix"></span>Follow on X</a>
+      <button class="btn btn-white btn-block" id="sideWallet"></button>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <a class="mbrand" href="#/"><span class="logo"></span>synth</a>
+      <div class="ca" id="caBox"><span class="lbl">CA</span><span class="val" id="caVal"></span><button id="caCopy"><span class="ic"></span><span>Copy</span></button></div>
+      <div class="sp"></div>
+      <a class="xbtn" id="topX" target="_blank" rel="noopener" aria-label="SYNTH on X"></a>
+      <button class="btn btn-pri wallet" id="topWallet"></button>
+    </header>
+    <div class="view" id="view"></div>
+  </main>
+</div>
+<nav class="mnav" id="mnav"></nav>
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileIn" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+<script>
+/* ============ CONFIG ============ */
+const CONFIG = {
+  X_URL: 'https://x.com/Synthlaunch',
+  X_HANDLE: '@Synthlaunch',
+  OFFICIAL_CA: '',            // set at launch (or served by /api/ca)
+  CHAIN: 'Robinhood Chain',
+  SITE: location.origin && location.origin.startsWith('http') ? location.origin : 'https://synth'
+};
+
+/* ============ ICONS ============ */
+const I = {
+  explore:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/></svg>',
+  reels:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 8h18M8 3l3 5M14 3l3 5"/><path d="m10 12 5 3-5 3z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  calls:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 21l2-5.6A8.4 8.4 0 1 1 21 11.5z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  docs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>',
+  upload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>',
+  wand:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 4 5 5L9 20H4v-5z"/><path d="M13 6l5 5"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>',
+  chevU:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>',
+  chevD:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  music:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  rat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h12a4 4 0 0 0 0-8h-1a5 5 0 0 0-9.6 2"/><path d="M4 17c-1.5 0-2-1-2-2M18 9V6M16 17v3M8 17v3"/></svg>',
+  chip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4"/></svg>',
+  crown:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 8 4 10h12l4-10-6 4-4-7-4 7z"/></svg>',
+  mega:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 15-6v14L3 13z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>',
+  rocket:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/></svg>',
+  gem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6M2 9h20"/></svg>',
+  ghost:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>'
+};
+const LOGO = (h=30)=>`<svg viewBox="0 0 90 144" style="height:${h}px;width:auto" aria-hidden="true"><defs><linearGradient id="lgL${h}" x1="0" y1="0" x2="90" y2="142" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#E4FF3D"/><stop offset=".55" stop-color="#3DFF7A"/><stop offset="1" stop-color="#00B88A"/></linearGradient></defs><path d="M0 54C0 22 20 0 45 0S90 22 90 54L90 82C90 95 84 99 79 93C75 88 72 91 72 99L72 132C72 143 60 143 60 132L60 104C60 99 56 99 54 103C47 110 21 110 11 102C3 96 0 88 0 78Z" fill="url(#lgL${h})"/><ellipse cx="34" cy="52" rx="5" ry="7.5" fill="#000"/><ellipse cx="56" cy="52" rx="5" ry="7.5" fill="#000"/></svg>`;
+
+/* ============ DATA: archetypes / vibes / voices ============ */
+const ARCH = [
+  {id:'rat',   n:'Trench Rat',      q:'"born in the trenches, never left"', ic:'rat'},
+  {id:'whisp', n:'Chart Whisperer', q:'"the candles talk to me"',          ic:'up'},
+  {id:'owl',   n:'Night Owl',       q:'"posting while you sleep"',          ic:'moon'},
+  {id:'hype',  n:'Hype Machine',    q:'"volume up, always"',                ic:'mega'},
+  {id:'silent',n:'Silent Holder',   q:'"says little, holds forever"',       ic:'gem'},
+  {id:'moon',  n:'Moon Kid',        q:'"already packed for orbit"',         ic:'rocket'},
+  {id:'glitch',n:'The Glitch',      q:'"error 404: bearish not found"',     ic:'chip'},
+  {id:'main',  n:'Main Character',  q:'"the timeline is my stage"',         ic:'crown'}
+];
+const VIBES = ['Bullish','Degen','Chill','Chaotic','Mystic','Meme','Tech','Hood'];
+const VOICES = ['Wholesome','Savage','Cryptic','Loud'];
+const PALETTES = {
+  Bullish:['#0E3B1F','#1C7A3E','#3DFF7A'], Degen:['#2A0F3D','#7A1E8C','#FF4FD8'], Chill:['#062A33','#0E6F7A','#4FE3E0'],
+  Chaotic:['#3D1405','#B23A12','#FF9A3D'], Mystic:['#120C33','#3B2A9C','#9C8CFF'], Meme:['#3A3205','#9C8A10','#F5E23D'],
+  Tech:['#04202A','#0A6C8A','#3DD8FF'], Hood:['#0B2A06','#3E8C12','#C6FF3D']
+};
+const LINES = {
+  Wholesome:['gm {T} fam','{C}','day {N} of posting. still here, still holding.','sending good vibes to every {T} holder','we grow together, slowly then all at once','proud of this community fr','hydrate. hold. repeat.','you belong here'],
+  Savage:['paper hands left. good.','{T} doesn\'t chase. it gets chased.','{C}','your bags called. they want {T}.','imagine selling. couldn\'t be me.','fudders typing, we\'re building','another day, another higher low','stay mad, stay early'],
+  Cryptic:['you\'ll understand later.','the chart remembers.','{C}','not everyone is meant to see this yet','three signs. you missed two.','{T}. that\'s the message.','watch the green. trust the green.','soon means something here'],
+  Loud:['WE ARE SO EARLY','{T} ON EVERY TIMELINE','{C}','LOOK AT THIS COMMUNITY','NO SLEEP. ONLY POSTS.','IF YOU\'RE READING THIS YOU\'RE EARLY','GREEN IS MY FAVORITE COLOR','{T} SEASON IS HERE']
+};
+const ARCH_LINES = {
+  rat:['trenches are home','found {T} before it had a name'],
+  whisp:['the candles told me about {T}','i speak fluent chart'],
+  owl:['3am and still posting for {T}','you sleep, {T} grows'],
+  hype:['turn it up for {T}','volume is a lifestyle'],
+  silent:['…','holding {T}. that\'s it. that\'s the post.'],
+  moon:['next stop: orbit','packed my bags for {T}'],
+  glitch:['bearish.exe has stopped working','{T} detected. joy.exe running'],
+  main:['the timeline is my stage','{T} is the plot']
+};
+
+/* ============ NAV STATE ============ */
+let CUR = (location.hash||'#/');
+function curPath(){ return CUR.replace(/^#\/?/,''); }
+function go(h){ if(!h.startsWith('#')) h='#/'+h; CUR=h; try{ if(location.hash!==h) history.pushState(null,'',h); }catch(e){} route(); }
+window.go=go;
+/* ============ UTIL ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clean = s => String(s ?? '').replace(/[\u0000-\u001F\u007F​-‏‪-‮⁦-⁩﻿]/g,'').trim();
+const short = a => a ? a.slice(0,6)+'…'+a.slice(-4) : '';
+const ago = ts => { const s=Math.max(1,Math.floor((Date.now()-ts)/1000)); if(s<60)return s+'s'; const m=Math.floor(s/60); if(m<60)return m+'m'; const h=Math.floor(m/60); if(h<24)return h+'h'; const d=Math.floor(h/24); return d+'d'; };
+const fdate = ts => new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const hash = s => { let h=2166136261; for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);} return h>>>0; };
+const pick = (arr, seed) => arr[seed % arr.length];
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+function toast(msg, bad){ const t=$('#toast'); t.className='toast on'+(bad?' bad':''); t.innerHTML=(bad?I.warn:I.check).replace('<svg','<svg width="16" height="16"')+esc(msg); clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast'+(bad?' bad':''),2600); }
+function copy(txt, label){ (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast((label||'Copied')+' to clipboard')).catch(()=>{ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');toast((label||'Copied')+' to clipboard')}catch(e){toast('Copy failed',1)} ta.remove(); }); }
+const LS = { get(k,d){ try{ const v=localStorage.getItem('synth_'+k); return v?JSON.parse(v):d }catch(e){ return d } }, set(k,v){ try{ localStorage.setItem('synth_'+k, JSON.stringify(v)) }catch(e){} } };
+
+/* generated avatar (no upload) */
+function genAvatar(name, vibe){
+  const c=document.createElement('canvas'); c.width=c.height=320; const x=c.getContext('2d');
+  const p=PALETTES[vibe]||PALETTES.Bullish; const g=x.createLinearGradient(0,0,320,320);
+  g.addColorStop(0,p[2]); g.addColorStop(.6,p[1]); g.addColorStop(1,p[0]); x.fillStyle=g; x.fillRect(0,0,320,320);
+  x.fillStyle='rgba(0,0,0,.85)'; x.font='900 170px Inter, sans-serif'; x.textAlign='center'; x.textBaseline='middle';
+  x.fillText((name||'?').trim().charAt(0).toUpperCase()||'?',160,172);
+  return c.toDataURL('image/webp',.9);
+}
+function resizeImage(file){
+  return new Promise((res,rej)=>{
+    if(!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) return rej('Use PNG, JPG, WEBP or GIF');
+    if(file.size>5*1024*1024) return rej('Max 5 MB');
+    const fr=new FileReader();
+    fr.onload=()=>{ const im=new Image(); im.onload=()=>{ const s=Math.min(im.width,im.height); const c=document.createElement('canvas'); c.width=c.height=320; const x=c.getContext('2d'); x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,320,320); res(c.toDataURL('image/webp',.86)); }; im.onerror=()=>rej('Could not read this image'); im.src=fr.result; };
+    fr.onerror=()=>rej('Could not read this file'); fr.readAsDataURL(file);
+  });
+}
+
+/* posts generator */
+function makePost(coin, n, ts){
+  const seed=hash(coin.id+':'+n);
+  const voice=coin.voice||'Wholesome';
+  const pool=[...(LINES[voice]||LINES.Wholesome), ...(ARCH_LINES[coin.arch]||[])];
+  let txt=pick(pool, seed);
+  if(n===0) txt = voice==='Loud' ? `HI, I'M ${coin.name.toUpperCase()}. ${('$'+coin.ticker)} STARTS NOW.` : `hi, i'm ${coin.name.toLowerCase()}. ${'$'+coin.ticker} starts now.`;
+  txt=txt.replace(/\{T\}/g,'$'+coin.ticker).replace(/\{C\}/g, coin.catch||('$'+coin.ticker+' forever')).replace(/\{N\}/g, n+1);
+  const vibe=(coin.vibes&&coin.vibes[seed%coin.vibes.length])||'Bullish';
+  return {id:coin.id+'_'+n, coin:coin.id, n, text:txt, vibe, ts:ts||coin.created+n*60000};
+}
+function postBg(p){ const c=PALETTES[p.vibe]||PALETTES.Bullish; return `background:linear-gradient(160deg,${c[1]} 0%,${c[0]} 70%,#000 130%);color:#fff`; }
+function postHTML(p, coin, cls=''){
+  return `<div class="post ${cls}" style="${postBg(p)}" data-reel="${esc(p.id)}"><div class="ph"><img src="${esc(coin.img)}" alt="">${esc(coin.handle||coin.name.toLowerCase())}</div><div class="pt">${esc(p.text)}</div><span class="ptk">$${esc(coin.ticker)}</span></div>`;
+}
+
+/* ============ STORE (Worker API or local) ============ */
+const Store = {
+  api:false, coins:[], calls:[], ca:'',
+  async init(){
+    if(location.protocol.startsWith('http')){
+      try{ const r=await fetch('/api/stats',{cache:'no-store'}); if(r.ok && (r.headers.get('content-type')||'').includes('json')) this.api=true; }catch(e){}
+    }
+    await this.refresh();
+  },
+  async refresh(){
+    if(this.api){
+      try{
+        const [c,m,ca]=await Promise.all([fetch('/api/coins').then(r=>r.json()),fetch('/api/calls').then(r=>r.json()),fetch('/api/ca').then(r=>r.json())]);
+        this.coins=c.coins||[]; this.calls=m.calls||[]; this.ca=ca.ca||CONFIG.OFFICIAL_CA;
+      }catch(e){}
+    } else {
+      this.coins=LS.get('coins',[]); this.calls=LS.get('calls',[]); this.ca=CONFIG.OFFICIAL_CA;
+    }
+    this.coins.sort((a,b)=>b.created-a.created);
+  },
+  async launch(coin){
+    if(this.api){
+      const r=await fetch('/api/launch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(coin)});
+      const j=await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(j.error||'Launch failed, try again');
+      await this.refresh(); return j.coin||coin;
+    }
+    const last=LS.get('lastLaunch',0); if(Date.now()-last<60000) throw new Error('One launch per minute. Try again in '+Math.ceil((60000-(Date.now()-last))/1000)+'s');
+    const all=LS.get('coins',[]); all.unshift(coin); LS.set('coins',all); LS.set('lastLaunch',Date.now());
+    await this.refresh(); return coin;
+  },
+  async addPost(coinId, wallet, sig){
+    if(this.api){
+      const r=await fetch('/api/feed',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({coin:coinId,wallet,sig})});
+      const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||'Could not post'); await this.refresh(); return;
+    }
+    const all=LS.get('coins',[]); const c=all.find(x=>x.id===coinId); if(!c) return;
+    c.pt=[...(c.pt||[]),Date.now()].slice(-60); LS.set('coins',all); await this.refresh();
+  },
+  async call(msg){
+    if(this.api){
+      const r=await fetch('/api/calls',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(msg)});
+      const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||'Could not send'); await this.refresh(); return;
+    }
+    const last=LS.get('lastCall',0); if(Date.now()-last<8000) throw new Error('Slow down a little');
+    const all=LS.get('calls',[]); all.push(msg); LS.set('calls',all.slice(-300)); LS.set('lastCall',Date.now()); await this.refresh();
+  },
+  coin(id){ return this.coins.find(c=>c.id===id); },
+  posts(coin){ const out=[]; const now=Date.now(); for(let i=0;i<4;i++) out.push(makePost(coin,i, Math.min(now, coin.created + i*90000))); (coin.pt||[]).forEach((ts,j)=>out.push(makePost(coin,4+j,ts))); return out.sort((a,b)=>b.ts-a.ts); },
+  allPosts(){ return this.coins.flatMap(c=>this.posts(c).map(p=>({p,c}))).sort((a,b)=>b.p.ts-a.p.ts); }
+};
+
+/* ============ WALLET (EVM) ============ */
+const Wallet = {
+  addr: LS.get('wallet',''),
+  async connect(){
+    if(!window.ethereum){ openModal(`<div class="bigav" style="background:none;display:grid;place-items:center">${LOGO(90)}</div><h2>Connect a wallet</h2><p>SYNTH runs on ${CONFIG.CHAIN}. Open this page in an EVM wallet (MetaMask, Rabby, Coinbase Wallet…) or install the extension, then connect again.</p><div class="acts"><button class="btn btn-sec" onclick="closeModal()">Got it</button></div>`); return ''; }
+    try{ const a=await window.ethereum.request({method:'eth_requestAccounts'}); this.addr=(a&&a[0]||'').toLowerCase(); LS.set('wallet',this.addr); renderChrome(); toast('Wallet connected'); route(); return this.addr; }
+    catch(e){ toast('Connection cancelled',1); return ''; }
+  },
+  disconnect(){ this.addr=''; LS.set('wallet',''); renderChrome(); route(); toast('Disconnected'); },
+  async sign(message){
+    if(!window.ethereum||!this.addr) throw new Error('Connect your wallet first');
+    const hex='0x'+Array.from(new TextEncoder().encode(message)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    return await window.ethereum.request({method:'personal_sign',params:[hex,this.addr]});
+  }
+};
+if(window.ethereum&&window.ethereum.on){ window.ethereum.on('accountsChanged',a=>{ Wallet.addr=(a&&a[0]||'').toLowerCase(); LS.set('wallet',Wallet.addr); renderChrome(); route(); }); }
+
+/* ============ CHROME ============ */
+const NAV=[
+  {h:'#/',k:'',t:'Explore',i:'explore'},
+  {h:'#/reels',k:'reels',t:'Reels',i:'reels',dot:1},
+  {h:'#/launch',k:'launch',t:'Launch',i:'plus',launch:1},
+  {h:'#/calls',k:'calls',t:'Calls',i:'calls',dot:1},
+  {h:'#/me',k:'me',t:'My synths',i:'user'},
+  {h:'#/docs',k:'docs',t:'How it works',i:'docs'},
+  {h:'#/about',k:'about',t:'About',i:'info'}
+];
+function renderChrome(){
+  const k=(curPath().split('/')[0])||'';
+  $('#nav').innerHTML=NAV.map(n=>`<a href="${n.h}" class="${n.k===k||(k==='coin'&&n.k==='')?'on':''} ${n.launch?'launch':''}">${n.launch?`<span class="ico">${I.plus}</span>`:I[n.i]}${n.t}${n.dot?'<span class="dot"></span>':''}</a>`).join('');
+  $('#mnav').innerHTML=[NAV[0],NAV[1],NAV[2],NAV[3],NAV[4]].map(n=>`<a href="${n.h}" class="${n.k===k?'on':''} ${n.launch?'plus':''}">${n.launch?`<span class="pi">${I.plus}</span>`:I[n.i]}${n.launch?'Launch':n.t.replace('My synths','Me')}</a>`).join('');
+  document.querySelectorAll('.logo').forEach(e=>e.innerHTML=LOGO(e.closest('.mbrand')?24:32));
+  const ca=Store.ca; const v=$('#caVal'); v.textContent=ca||'Drops at launch'; v.className='val'+(ca?'':' muted');
+  $('#caCopy').querySelector('.ic').innerHTML=I.copy;
+  $('#topX').innerHTML=I.x; $('#topX').href=CONFIG.X_URL; $('#sideX').href=CONFIG.X_URL; $('#sideX').querySelector('.ix').innerHTML=I.x.replace('<svg','<svg width="16" height="16"');
+  const w=Wallet.addr;
+  $('#topWallet').innerHTML= w?`<span class="wdot"></span><span class="mono">${short(w)}</span>`:`${I.wallet}<span class="full">Connect wallet</span>`;
+  $('#topWallet').className='btn wallet '+(w?'btn-sec':'btn-pri');
+  $('#sideWallet').innerHTML= w?`<span class="wdot" style="width:8px;height:8px;border-radius:50%;background:#3DFF7A"></span><span class="mono">${short(w)}</span>`:`${I.wallet}Connect wallet`;
+}
+$('#caCopy').onclick=()=>{ if(!Store.ca) return toast('The contract address drops at launch. Follow '+CONFIG.X_HANDLE,1); copy(Store.ca,'CA copied'); };
+$('#topWallet').onclick=$('#sideWallet').onclick=()=>{ Wallet.addr? openModal(`<h2>Your wallet</h2><p class="mono" style="word-break:break-all">${esc(Wallet.addr)}</p><div class="acts"><a class="btn btn-pri" href="#/me" onclick="closeModal()">My synths</a><button class="btn btn-sec" onclick="Wallet.disconnect();closeModal()">Disconnect</button></div>`) : Wallet.connect(); };
+function openModal(h){ $('#modalBox').innerHTML=h; $('#modal').classList.add('on'); }
+function closeModal(){ $('#modal').classList.remove('on'); }
+$('#modal').onclick=e=>{ if(e.target.id==='modal') closeModal(); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+function footer(){
+  return `<footer class="foot"><div><a class="brand" href="#/">${LOGO(28)}<b>synth</b></a><p>The launchpad where every coin gets its own character, posting reels to pump it 24/7. Built on ${CONFIG.CHAIN}.</p></div>
+  <div><h4>PRODUCT</h4><a href="#/launch">Launch a coin</a><a href="#/reels">Reels</a><a href="#/calls">Calls</a><a href="#/me">My synths</a></div>
+  <div><h4>LEARN</h4><a href="#/docs">How it works</a><a href="#/docs#faq">FAQ</a><a href="#/docs#safety">Safety</a><a href="#/about">About</a></div>
+  <div><h4>COMMUNITY</h4><a href="${CONFIG.X_URL}" target="_blank" rel="noopener">X / Twitter</a><a href="#/calls">Trench chat</a></div>
+  <div class="disc">Not financial advice. Memecoins are extremely volatile and you can lose everything you put in. SYNTH will never DM you and will never ask for your seed phrase or private key.</div></footer>`;
+}
+
+/* ============ PAGES ============ */
+function heroPhone(cls, img, text, vibe, tk, handle){
+  const c=PALETTES[vibe];
+  return `<div class="phone ${cls}"><div class="scr" style="background:linear-gradient(160deg,${c[1]},${c[0]} 70%,#000)">
+    <div style="position:absolute;top:12px;left:14px;right:14px;height:3px;border-radius:3px;background:rgba(255,255,255,.2)"><i style="display:block;height:100%;width:55%;background:#fff;border-radius:3px"></i></div>
+    <div style="position:absolute;top:26px;left:14px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700"><span style="width:24px;height:24px;border-radius:50%;background:#000;display:grid;place-items:center;border:1.5px solid #fff">${img}</span>${handle}</div>
+    <div style="position:absolute;left:16px;right:16px;top:90px;font-size:30px;font-weight:900;letter-spacing:-1.3px;line-height:1">${text}</div>
+    <div style="position:absolute;left:16px;top:250px;height:30px;padding:0 12px;border-radius:999px;border:2px solid #fff;display:flex;align-items:center;font-weight:900;font-size:14px">${tk}</div>
+    <div style="position:absolute;left:10px;right:10px;bottom:10px;height:42px;border-radius:12px;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 12px;font-family:var(--mono);font-size:12px;font-weight:700">${tk}<span style="height:28px;padding:0 12px;border-radius:9px;background:var(--grad);color:#000;display:grid;place-items:center;font-family:var(--sans)">Buy</span></div>
+  </div></div>`;
+}
+function coinCard(c){
+  const p=Store.posts(c)[0]; const pal=PALETTES[p.vibe]||PALETTES.Bullish; const wl=LS.get('watch',[]); const on=wl.includes(c.id);
+  return `<article class="coin" data-coin="${esc(c.id)}">
+    <div class="cover" style="background:linear-gradient(160deg,${pal[1]},${pal[0]} 75%,#000)"><img class="bgimg" src="${esc(c.img)}" alt="">
+      <div class="tp"><span class="tick">$${esc(c.ticker)}</span><span class="row" style="gap:6px"><span class="age">${ago(c.created)}</span><button class="star ${on?'on':''}" data-star="${esc(c.id)}" aria-label="Watchlist">${I.star}</button></span></div>
+      <div class="cap">${esc(p.text)}</div></div>
+    <div class="body"><div class="idrow"><img class="av" src="${esc(c.img)}" alt=""><div class="nm"><b>${esc(c.name)}</b><span>@${esc(c.handle)} · ${esc((ARCH.find(a=>a.id===c.arch)||ARCH[0]).n)}</span></div></div>
+      <div class="meta"><div><small>Creator</small><b>${short(c.creator)}</b></div><div><small>Contract</small><b>${c.ca?short(c.ca):'Deploying'}</b></div></div></div></article>`;
+}
+function pageExplore(){
+  const coins=Store.coins; const now=Date.now();
+  const f=LS.get('filter','all'); const q=(LS.get('q','')||'').toLowerCase(); const sort=LS.get('sort','new'); const wl=LS.get('watch',[]);
+  let list=coins.filter(c=> f==='all' || (f==='today'&&now-c.created<864e5) || (f==='watch'&&wl.includes(c.id)) || (f==='mine'&&c.creator===Wallet.addr));
+  if(q) list=list.filter(c=>(c.name+' '+c.ticker+' '+c.handle+' '+(c.desc||'')).toLowerCase().includes(q));
+  if(sort==='old') list=[...list].reverse(); if(sort==='az') list=[...list].sort((a,b)=>a.name.localeCompare(b.name)); if(sort==='posts') list=[...list].sort((a,b)=>(b.pt||[]).length-(a.pt||[]).length);
+  const creators=new Set(coins.map(c=>c.creator)).size; const posts=coins.reduce((s,c)=>s+4+(c.pt||[]).length,0); const day=coins.filter(c=>now-c.created<864e5).length;
+  const m=coins.slice(0,12); const mq=m.length?[...m,...m].map(c=>`<a class="it" href="#/coin/${esc(c.id)}"><img src="${esc(c.img)}" alt="" style="width:24px;height:24px;border-radius:50%"><b>$${esc(c.ticker)}</b> launched ${ago(c.created)} ago</a>`).join(''):'';
+  return `
+  <section class="hero">
+    <div style="position:relative;z-index:1">
+      <span class="pill"><i></i>Every coin gets a face</span>
+      <h1>Launch a coin.<br>Give it a face.<br>Let it <span class="gtext">post.</span></h1>
+      <p>Drop a character, launch its coin from your own wallet, and it gets a profile and a feed of reels that keep your coin on every timeline.</p>
+      <div class="cta"><a class="btn btn-pri" href="#/launch">${I.plus}Launch a coin</a><a class="btn btn-sec" href="#/reels">${I.play}Watch reels</a></div>
+      <div class="trust"><span>${I.shield}Your keys stay in your wallet</span><span>${I.bolt}Built on ${CONFIG.CHAIN}</span></div>
+    </div>
+    <div class="phones">
+      ${heroPhone('p1', LOGO(14), 'chart has main character energy','Chill','$SYNTH','synth')}
+      ${heroPhone('p2', LOGO(14), 'posting while you sleep','Bullish','$SYNTH','synth')}
+      ${heroPhone('p3', LOGO(14), 'green is my favorite color','Hood','$SYNTH','synth')}
+      <div class="float-chip" style="left:0;top:18px">${I.reels}Reels from your character</div>
+      <div class="float-chip" style="right:0;top:200px">${I.shield}Signed in your wallet</div>
+      <div class="float-chip" style="left:16%;bottom:-6px">${I.up}Posts 24/7</div>
+    </div>
+  </section>
+  <div class="stats">
+    <div class="stat panel"><span class="si">${I.plus}</span><div><b>${coins.length}</b><span>synths launched</span></div></div>
+    <div class="stat panel"><span class="si">${I.clock}</span><div><b>${day}</b><span>launched in 24h</span></div></div>
+    <div class="stat panel"><span class="si">${I.users}</span><div><b>${creators}</b><span>creators</span></div></div>
+    <div class="stat panel"><span class="si">${I.reels}</span><div><b>${posts}</b><span>posts in the feed</span></div></div>
+  </div>
+  ${mq?`<div class="marq"><div class="tr">${mq}</div></div>`:''}
+  <div class="sec-title"><h2>Synths <span class="live"><i></i>LIVE</span></h2></div>
+  <div class="stories"><a class="story" href="#/launch"><span class="ring add">${I.plus}</span><span>Launch yours</span></a>${coins.slice(0,14).map(c=>`<a class="story" href="#/coin/${esc(c.id)}"><span class="ring"><img src="${esc(c.img)}" alt=""></span><span>${esc(c.handle)}</span></a>`).join('')}</div>
+  <div class="toolbar" style="margin-top:18px">
+    ${[['all','All'],['today','New today'],['watch','Watchlist'],['mine','Mine']].map(([k,t])=>`<button class="chip ${f===k?'on':''}" data-filter="${k}">${k==='watch'?I.star:''}${t}</button>`).join('')}
+    <select class="sel" id="sortSel">${[['new','Newest'],['old','Oldest'],['posts','Most posts'],['az','A–Z']].map(([k,t])=>`<option value="${k}" ${sort===k?'selected':''}>${t}</option>`).join('')}</select>
+    <label class="search">${I.search}<input id="q" placeholder="Search name, ticker, handle" value="${esc(LS.get('q',''))}"></label>
+  </div>
+  ${list.length?`<div class="grid">${list.map(coinCard).join('')}</div>`:
+   `<div class="empty"><div style="display:grid;place-items:center;margin-bottom:16px">${LOGO(70)}</div><h3>${coins.length?'Nothing here yet':'The feed is waiting for its first synth'}</h3><p>${coins.length?'Try another filter or search.':'Be the first: give a coin a face and it starts posting right away.'}</p><a class="btn btn-pri" href="#/launch">${I.plus}Launch a coin</a></div>`}
+  <div class="sec-title"><h2>Launch tech that respects the trenches</h2></div>
+  <div class="feats">
+    <div class="feat panel"><span class="fi">${I.shield}</span><b>Wallet-first</b><p>You connect and sign with your own wallet. No keys, no seed phrase, nothing custodial.</p></div>
+    <div class="feat panel"><span class="fi">${I.ghost}</span><b>A face for every coin</b><p>Each coin gets a character with an archetype, a vibe and a voice, plus its own profile.</p></div>
+    <div class="feat panel"><span class="fi">${I.reels}</span><b>Always posting</b><p>Your character fills its feed with reels and posts on the rhythm you pick: 1, 3 or 6 a day.</p></div>
+    <div class="feat panel"><span class="fi">${I.calls}</span><b>Trench chat</b><p>Call coins launched here, talk to holders. No links, no outside contracts, no scams.</p></div>
+  </div>
+  ${footer()}`;
+}
+function bindExplore(){
+  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{ LS.set('filter',b.dataset.filter); route(); });
+  $('#sortSel').onchange=e=>{ LS.set('sort',e.target.value); route(); };
+  const q=$('#q'); q.oninput=()=>{ LS.set('q',q.value); clearTimeout(q._t); q._t=setTimeout(()=>{ const pos=q.selectionStart; route(); const n=$('#q'); n.focus(); n.setSelectionRange(pos,pos); },250); };
+  bindCards();
+}
+function bindCards(){
+  document.querySelectorAll('[data-star]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const id=b.dataset.star; let wl=LS.get('watch',[]); wl=wl.includes(id)?wl.filter(x=>x!==id):[...wl,id]; LS.set('watch',wl); b.classList.toggle('on'); toast(wl.includes(id)?'Added to watchlist':'Removed from watchlist'); });
+  document.querySelectorAll('[data-coin]').forEach(a=>a.onclick=()=>go('#/coin/'+a.dataset.coin));
+}
+
+/* coin page */
+function shareX(c){
+  const txt=`Meet ${c.name} ($${c.ticker}), my synth on SYNTH.\n\n"${c.catch||'posting 24/7'}"\n\n${c.ca?'CA: '+c.ca+'\n\n':''}${CONFIG.SITE}/#/coin/${c.id}`;
+  window.open('https://x.com/intent/tweet?text='+encodeURIComponent(txt),'_blank','noopener');
+}
+function pageCoin(id){
+  const c=Store.coin(id);
+  if(!c) return `<div class="empty"><h3>Synth not found</h3><p>This coin isn't listed (yet).</p><a class="btn btn-pri" href="#/">Back to Explore</a></div>`;
+  const posts=Store.posts(c); const a=ARCH.find(x=>x.id===c.arch)||ARCH[0]; const mine=Wallet.addr&&Wallet.addr===c.creator;
+  const L=c.links||{}; const link=(u,t)=>u?`<a class="btn btn-sec btn-sm" href="${esc(u)}" target="_blank" rel="noopener nofollow">${t} ${I.ext.replace('<svg','<svg width="13" height="13"')}</a>`:'';
+  return `<div class="cp">
+    <div class="panel">
+      <div class="cp-head"><div class="big"><img src="${esc(c.img)}" alt=""></div><div style="min-width:0">
+        <div class="row" style="flex-wrap:wrap"><h1>${esc(c.name)}</h1><span class="tag g">$${esc(c.ticker)}</span></div>
+        <div class="muted" style="margin-top:4px">@${esc(c.handle)} · ${esc(a.n)} · ${esc(c.voice)}</div>
+        <div class="counts"><div><b>${posts.length}</b><span>posts</span></div><div><b>${c.ppd||3}/day</b><span>posting</span></div><div><b>${esc((c.vibes||[])[0]||'Bullish')}</b><span>vibe</span></div></div>
+        <p>${esc(c.desc||'')}</p>${c.catch?`<p class="catch">"${esc(c.catch)}"</p>`:''}
+        <div class="links">${link(L.x,'X')}${link(L.tg,'Telegram')}${link(L.web,'Website')}<button class="btn btn-pri btn-sm" id="shareBtn">${I.x.replace('<svg','<svg width="14" height="14"')}Share on X</button>${mine?`<button class="btn btn-sec btn-sm" id="newPost">${I.wand.replace('<svg','<svg width="15" height="15"')}New post</button>`:''}</div>
+      </div></div>
+      <div class="tabs"><span class="chip on">${I.reels.replace('<svg','<svg width="15" height="15"')}Posts</span><a class="chip" href="#/reels/${esc(c.id)}">${I.play.replace('<svg','<svg width="13" height="13"')}Play reels</a></div>
+      <div class="posts">${posts.map(p=>postHTML(p,c)).join('')}</div>
+    </div>
+    <div class="sticky">
+      <div class="panel side-card"><h3>Coin info ${c.ca?'<span class="tag g">Live</span>':'<span class="tag warn">Deploying</span>'}</h3>
+        <div class="kv"><span>Name</span><b>${esc(c.name)}</b></div>
+        <div class="kv"><span>Ticker</span><b class="mono">$${esc(c.ticker)}</b></div>
+        <div class="kv"><span>Chain</span><b>${CONFIG.CHAIN}</b></div>
+        <div class="kv"><span>Contract</span><b class="mono">${c.ca?`<a href="#" id="copyCoinCa">${short(c.ca)} ⧉</a>`:'Deploying'}</b></div>
+        <div class="kv"><span>Creator</span><b class="mono"><a href="#" id="copyCreator">${short(c.creator)} ⧉</a></b></div>
+        <div class="kv"><span>Launched</span><b>${fdate(c.created)} · ${ago(c.created)} ago</b></div>
+        <div class="kv"><span>Archetype</span><b>${esc(a.n)}</b></div>
+        <div class="kv"><span>Vibes</span><b>${esc((c.vibes||[]).join(', '))}</b></div>
+      </div>
+      ${mine?`<div class="panel side-card"><h3>Creator rewards</h3><p style="color:var(--tx2);font-size:14px;line-height:1.5">Trading fees owed to you show up here once your coin is live and trading.</p><div class="kv" style="margin-top:6px"><span>Claimable</span><b class="mono">0.0000 ETH</b></div><button class="btn btn-sec btn-block" disabled style="opacity:.5;margin-top:8px">Claim to my wallet</button></div>`:''}
+    </div></div>${footer()}`;
+}
+function bindCoin(id){
+  const c=Store.coin(id); if(!c) return;
+  $('#shareBtn').onclick=()=>shareX(c);
+  const cc=$('#copyCoinCa'); if(cc) cc.onclick=e=>{e.preventDefault();copy(c.ca,'Contract copied')};
+  $('#copyCreator').onclick=e=>{e.preventDefault();copy(c.creator,'Creator address copied')};
+  document.querySelectorAll('[data-reel]').forEach(p=>p.onclick=()=>go('#/reels/'+c.id));
+  const np=$('#newPost'); if(np) np.onclick=async()=>{
+    const today=(c.pt||[]).filter(t=>Date.now()-t<864e5).length;
+    if(today>=(c.ppd||3)) return toast('Daily posting limit reached for this synth',1);
+    np.disabled=true;
+    try{ const sig=await Wallet.sign(`SYNTH · new post for $${c.ticker}\nCoin: ${c.id}\nTime: ${new Date().toISOString()}`); await Store.addPost(c.id, Wallet.addr, sig); toast('New post is live in the feed'); route(); }
+    catch(e){ toast(e.message||'Cancelled',1); np.disabled=false; }
+  };
+}
+
+/* reels */
+let REEL={i:0,timer:null,list:[]};
+function brandReels(){
+  const fake={id:'synth',name:'synth',ticker:'SYNTH',handle:'synth',img:'',voice:'Loud',created:Date.now()};
+  return [['give your coin a face','Bullish'],['it posts while you sleep','Chill'],['launch yours in 2 minutes','Hood']].map(([t,v],i)=>({p:{id:'b'+i,text:t,vibe:v,ts:Date.now()},c:fake,brand:true}));
+}
+function pageReels(focus){
+  let list=Store.allPosts();
+  if(focus){ const f=list.filter(x=>x.c.id===focus); const rest=list.filter(x=>x.c.id!==focus); list=[...f,...rest]; }
+  if(!list.length) list=brandReels();
+  REEL.list=list; REEL.i=0;
+  return `<div class="reels"><div class="spacer"></div><div style="display:flex;gap:18px;align-items:flex-end;justify-content:center"><div class="reel" id="reel"></div><div class="ractions" id="ract"></div></div><div class="rpanel" id="rpanel"></div><div class="rnav"><button id="rUp" aria-label="Previous">${I.chevU}</button><button id="rDown" aria-label="Next">${I.chevD}</button></div></div>`;
+}
+function showReel(){
+  const it=REEL.list[REEL.i]; if(!it) return; const {p,c}=it; const pal=PALETTES[p.vibe]||PALETTES.Bullish;
+  const face=c.img?`<img class="face" src="${esc(c.img)}" alt="">`:`<div class="face" style="display:grid;place-items:center;background:#000">${LOGO(70)}</div>`;
+  const av=c.img?`<img src="${esc(c.img)}" alt="">`:`<span style="width:34px;height:34px;border-radius:50%;border:2px solid #fff;background:#000;display:grid;place-items:center">${LOGO(18)}</span>`;
+  $('#reel').innerHTML=`<div class="rbg" style="background:linear-gradient(165deg,${pal[1]},${pal[0]} 70%,#000)">${c.img?`<img src="${esc(c.img)}" alt="">`:''}</div>
+   <div class="prog"><i id="rprog"></i></div>
+   <div class="rh">${av}<div>${esc(c.handle)} <small>· ${it.brand?'pinned':ago(p.ts)}</small></div></div>
+   <div class="rc">${face}<h2>${esc(p.text)}</h2><span class="tk">$${esc(c.ticker)}</span></div>
+   <div class="rf"><p><b>${esc(c.handle)}</b> ${esc(p.text)}</p><small>${I.music} original audio · ${esc(c.handle)}</small>
+   <div class="bar">$${esc(c.ticker)} <a class="btn btn-pri btn-sm" href="${it.brand?'#/launch':'#/coin/'+esc(c.id)}">${it.brand?'Launch':'Open'}</a></div></div>`;
+  const wl=LS.get('watch',[]); const on=wl.includes(c.id);
+  $('#ract').innerHTML=`<a class="ract" href="#/calls"><span class="b">${I.calls}</span>Calls</a><button class="ract" id="rShare"><span class="b">${I.send}</span>Share</button>${it.brand?'':`<button class="ract" id="rStar"><span class="b ${on?'on':''}">${I.star}</span>Watch</button>`}<a class="ract" href="${it.brand?'#/launch':'#/coin/'+esc(c.id)}"><span class="b g">${it.brand?I.plus:I.user}</span>${it.brand?'Launch':'Profile'}</a>`;
+  const posts=it.brand?[]:Store.posts(c);
+  $('#rpanel').innerHTML= it.brand? `<div class="panel side-card"><h3>SYNTH</h3><p style="color:var(--tx2);line-height:1.55;font-size:14.5px;margin-bottom:16px">Every coin launched here gets a character that posts reels like these. Launch one and its feed shows up right here.</p><a class="btn btn-pri btn-block" href="#/launch">${I.plus}Launch a coin</a></div>` :
+   `<div class="panel side-card"><div class="idrow" style="margin-bottom:14px"><img class="av" src="${esc(c.img)}" alt=""><div class="nm"><b>${esc(c.name)}</b><span>$${esc(c.ticker)} · @${esc(c.handle)}</span></div></div>
+    <div class="kv"><span>Posts</span><b>${posts.length}</b></div><div class="kv"><span>Posting</span><b>${c.ppd||3}/day</b></div><div class="kv"><span>Contract</span><b class="mono">${c.ca?short(c.ca):'Deploying'}</b></div><div class="kv"><span>Creator</span><b class="mono">${short(c.creator)}</b></div>
+    <a class="btn btn-sec btn-block" style="margin-top:12px" href="#/coin/${esc(c.id)}">Open profile</a></div>`;
+  $('#rShare').onclick=()=> it.brand? window.open('https://x.com/intent/tweet?text='+encodeURIComponent('Every coin deserves a face. '+CONFIG.X_HANDLE+'\n'+CONFIG.SITE),'_blank','noopener') : shareX(c);
+  const rs=$('#rStar'); if(rs) rs.onclick=()=>{ let w=LS.get('watch',[]); w=w.includes(c.id)?w.filter(x=>x!==c.id):[...w,c.id]; LS.set('watch',w); rs.querySelector('.b').classList.toggle('on'); };
+  clearInterval(REEL.timer); let t0=Date.now(); const D=6500;
+  REEL.timer=setInterval(()=>{ const el=$('#rprog'); if(!el){clearInterval(REEL.timer);return} const k=(Date.now()-t0)/D; el.style.width=Math.min(100,k*100)+'%'; if(k>=1){ REEL.i=(REEL.i+1)%REEL.list.length; showReel(); } },60);
+}
+function bindReels(){
+  showReel();
+  $('#rUp').onclick=()=>{REEL.i=(REEL.i-1+REEL.list.length)%REEL.list.length;showReel()};
+  $('#rDown').onclick=()=>{REEL.i=(REEL.i+1)%REEL.list.length;showReel()};
+  let y0=null; const r=$('#reel'); r.addEventListener('touchstart',e=>y0=e.touches[0].clientY,{passive:true}); r.addEventListener('touchend',e=>{ if(y0==null)return; const dy=e.changedTouches[0].clientY-y0; if(Math.abs(dy)>50){ REEL.i=(REEL.i+(dy<0?1:-1)+REEL.list.length)%REEL.list.length; showReel(); } y0=null; });
+  r.onwheel=e=>{ if(r._w) return; r._w=1; setTimeout(()=>r._w=0,600); REEL.i=(REEL.i+(e.deltaY>0?1:-1)+REEL.list.length)%REEL.list.length; showReel(); };
+}
+document.addEventListener('keydown',e=>{ if(!$('#reel')) return; if(e.key==='ArrowDown'){REEL.i=(REEL.i+1)%REEL.list.length;showReel()} if(e.key==='ArrowUp'){REEL.i=(REEL.i-1+REEL.list.length)%REEL.list.length;showReel()} });
+
+/* launch */
+let F = LS.get('draft', null) || {img:'',name:'',ticker:'',handle:'',desc:'',catch:'',links:{x:'',tg:'',web:''},arch:'rat',vibes:['Bullish'],voice:'Wholesome',ppd:3};
+let prevMode='profile';
+function draftCoin(){
+  const name=F.name||'Your character'; const ticker=(F.ticker||'TOKEN');
+  return {id:'preview',name,ticker,handle:F.handle||'your.character',img:F.img||genAvatar(F.name||'Y',F.vibes[0]),desc:F.desc,catch:F.catch,arch:F.arch,vibes:F.vibes,voice:F.voice,ppd:F.ppd,created:Date.now(),creator:Wallet.addr};
+}
+function previewHTML(){
+  const c=draftCoin(); const posts=[0,1,2,3,4,5].map(n=>makePost(c,n));
+  if(prevMode==='reel'){ const p=posts[0]; const pal=PALETTES[p.vibe]||PALETTES.Bullish;
+    return `<div class="reel" style="width:100%;height:auto;max-width:none;border:0;border-radius:0;box-shadow:none"><div class="rbg" style="background:linear-gradient(165deg,${pal[1]},${pal[0]} 70%,#000)"><img src="${esc(c.img)}" alt=""></div><div class="prog"><i style="width:40%"></i></div><div class="rh"><img src="${esc(c.img)}" alt=""><div>${esc(c.handle)} <small>· now</small></div></div><div class="rc"><img class="face" src="${esc(c.img)}" alt=""><h2 style="font-size:32px">${esc(p.text)}</h2><span class="tk">$${esc(c.ticker)}</span></div><div class="rf"><div class="bar">$${esc(c.ticker)}<span class="btn btn-pri btn-sm">Open</span></div></div></div>`; }
+  return `<div class="ig"><div class="top2"><span>${esc(c.handle)}</span><span style="color:var(--tx3)">···</span></div>
+   <div class="prof"><span class="ring"><img src="${esc(c.img)}" alt=""></span><div class="cnt"><div><b>${posts.length}</b><span>posts</span></div><div><b>${c.ppd}/day</b><span>posting</span></div><div><b>${esc(c.vibes[0]||'—')}</b><span>vibe</span></div></div></div>
+   <div class="bio"><b>${esc(c.name)}</b>${esc(F.desc||'Your description. The character posts in this voice.')}${F.catch?`<br>"${esc(F.catch)}"`:''}<br><span class="l">$${esc(c.ticker)} on synth</span></div>
+   <div class="btns"><span class="f">Follow</span><span>${esc(c.voice)}</span></div>
+   <div class="gridp">${posts.map(p=>postHTML(p,c)).join('')}</div></div>`;
+}
+function pageLaunch(){
+  const done=[!!F.img, !!(F.name&&F.ticker&&F.handle), F.vibes.length>0, !!Wallet.addr];
+  return `<div class="eyebrow">${esc(CONFIG.CHAIN)}</div><h1 class="h1" style="margin-top:8px">Launch a coin</h1><p class="sub">Give your coin a face. Your character becomes its profile picture, its voice and its feed.</p>
+  <div class="lp" style="margin-top:26px"><div class="panel" style="overflow:hidden">
+    <div class="steps">${['Character','Coin','Vibe','Launch'].map((t,i)=>`<div class="${done[i]?'ok':''}"><i>0${i+1}</i>${t}</div>`).join('')}</div>
+    <div class="fsec"><h3><i class="${done[0]?'ok':''}">01</i>Character</h3><p>The face of the coin. It becomes the coin image and the star of every reel.</p>
+      <div class="drop" id="drop"><div class="thumb">${F.img?`<img src="${esc(F.img)}" alt="">`:I.upload}</div><div><b>${F.img?'Looking good. Click to change':'Drop your character here'}</b><span>PNG, JPG, WEBP or GIF · up to 5 MB · square works best</span></div><button class="btn btn-sec btn-sm" style="margin-left:auto" type="button">Browse</button></div>
+      <div class="err" id="e_img"></div></div>
+    <div class="fsec"><h3><i class="${done[1]?'ok':''}">02</i>Coin</h3><p>Name and ticker are permanent once launched. Take your time.</p>
+      <div class="fgrid">
+        <div class="field"><label>Name <small id="c_name">${F.name.length}/32</small></label><input class="inp" id="f_name" maxlength="32" placeholder="Nova Glitch" value="${esc(F.name)}"><div class="err" id="e_name"></div></div>
+        <div class="field"><label>Ticker <small id="c_ticker">${F.ticker.length}/10</small></label><div class="inp-pre"><span>$</span><input class="inp mono" id="f_ticker" maxlength="10" placeholder="NOVA" value="${esc(F.ticker)}"></div><div class="err" id="e_ticker"></div></div>
+        <div class="field full"><label>Handle <small>letters, digits, . and _</small></label><div class="inp-pre"><span>@</span><input class="inp" id="f_handle" maxlength="24" placeholder="nova.glitch" value="${esc(F.handle)}"></div><div class="err" id="e_handle"></div></div>
+        <div class="field full"><label>Description <a id="suggest">${I.wand.replace('<svg','<svg width="14" height="14"')}Suggest</a></label><textarea class="inp" id="f_desc" maxlength="280" placeholder="Who is this character? Shown on its profile.">${esc(F.desc)}</textarea></div>
+        <div class="field full"><label>Catchphrase <small>optional</small></label><input class="inp" id="f_catch" maxlength="60" placeholder="green candles only" value="${esc(F.catch)}"></div>
+        <div class="field"><label>X link <small>optional</small></label><input class="inp" id="f_x" placeholder="https://x.com/…" value="${esc(F.links.x)}"></div>
+        <div class="field"><label>Telegram <small>optional</small></label><input class="inp" id="f_tg" placeholder="https://t.me/…" value="${esc(F.links.tg)}"></div>
+        <div class="field full"><label>Website <small>optional</small></label><input class="inp" id="f_web" placeholder="https://…" value="${esc(F.links.web)}"><div class="err" id="e_links"></div></div>
+      </div></div>
+    <div class="fsec"><h3><i class="${done[2]?'ok':''}">03</i>Vibe</h3><p>Who your character is, and how it talks.</p>
+      <div class="field"><label>Archetype</label><div class="arch">${ARCH.map(a=>`<button type="button" class="${F.arch===a.id?'on':''}" data-arch="${a.id}"><span class="ai">${I[a.ic]}</span><span><b>${a.n}</b><span>${a.q}</span></span></button>`).join('')}</div></div>
+      <div class="field" style="margin-top:20px"><label>Vibes <small>pick up to 3</small></label><div class="opts">${VIBES.map(v=>`<button type="button" class="opt ${F.vibes.includes(v)?'on':''}" data-vibe="${v}"><span style="width:10px;height:10px;border-radius:50%;background:${PALETTES[v][2]}"></span>${v}</button>`).join('')}</div></div>
+      <div class="fgrid" style="margin-top:20px"><div class="field"><label>Voice</label><div class="seg">${VOICES.map(v=>`<button type="button" class="${F.voice===v?'on':''}" data-voice="${v}">${v}</button>`).join('')}</div></div>
+      <div class="field"><label>Posts per day</label><div class="seg">${[1,3,6].map(v=>`<button type="button" class="${F.ppd===v?'on':''}" data-ppd="${v}">${v}</button>`).join('')}</div></div></div>
+    </div>
+    <div class="fsec"><h3><i class="${done[3]?'ok':''}">04</i>Launch</h3><p>You sign one free message with your wallet to prove you're the creator. No funds move when you sign it.</p>
+      <div class="row" style="flex-wrap:wrap;gap:12px">${Wallet.addr?`<span class="pill"><i></i>Connected · <span class="mono">${short(Wallet.addr)}</span></span>`:`<button class="btn btn-sec" id="lConnect">${I.wallet}Connect wallet</button>`}</div>
+    </div>
+  </div>
+  <div class="sticky"><div class="row" style="justify-content:center"><div class="seg"><button class="${prevMode==='profile'?'on':''}" data-prev="profile">Profile</button><button class="${prevMode==='reel'?'on':''}" data-prev="reel">First reel</button></div></div>
+    <div class="mphone"><div class="scr"><div class="notch"></div><div id="preview">${previewHTML()}</div></div></div>
+    <div class="panel summary"><h3>Launch summary</h3>
+      <div class="kv"><span>Coin</span><b>${esc(F.name||'—')} <span class="mono">${F.ticker?'$'+esc(F.ticker):''}</span></b></div>
+      <div class="kv"><span>Chain</span><b>${CONFIG.CHAIN}</b></div>
+      <div class="kv"><span>Creator</span><b class="mono">${Wallet.addr?short(Wallet.addr):'Not connected'}</b></div>
+      <div class="kv"><span>Posting</span><b>${F.ppd} per day · ${esc(F.voice)}</b></div>
+      <div class="kv"><span>Platform fee</span><b class="mono">0</b></div>
+      <div class="order"><span class="eyebrow">What happens</span><div><i>1</i>You sign a free message in your wallet</div><div><i>2</i>Your synth goes live in Explore and Reels</div><div><i>3</i>Its coin is deployed on ${CONFIG.CHAIN}</div></div>
+      <button class="btn btn-pri btn-block" id="launchBtn" style="height:54px;margin-top:16px;font-size:16px">${I.bolt}${Wallet.addr?'Launch synth':'Connect wallet to launch'}</button>
+      <p style="text-align:center;color:var(--tx3);font-size:12.5px;margin-top:10px">Not financial advice. Never share your seed phrase.</p>
+    </div></div></div>${footer()}`;
+}
+function vLaunch(show){
+  const e={};
+  const name=clean(F.name), t=clean(F.ticker), h=clean(F.handle);
+  if(!F.img) e.img='Add a character image (or we generate one from the name).';
+  if(name.length<2) e.name='Name needs at least 2 characters.';
+  if(!/^[A-Z0-9]{2,10}$/.test(t)) e.ticker='2–10 letters or digits.';
+  else if(Store.coins.some(c=>c.ticker===t)) e.ticker='This ticker is already taken here.';
+  if(!/^[a-z0-9._]{2,24}$/.test(h)) e.handle='2–24 lowercase letters, digits, . or _';
+  else if(Store.coins.some(c=>c.handle===h)) e.handle='This handle is taken.';
+  const urlOk=u=>!u||/^https:\/\/[^\s<>"']+$/.test(u);
+  if(!urlOk(F.links.x)||!urlOk(F.links.tg)||!urlOk(F.links.web)) e.links='Links must start with https://';
+  else if(F.links.x&&!/^https:\/\/(x|twitter)\.com\//.test(F.links.x)) e.links='X link must be an x.com link.';
+  else if(F.links.tg&&!/^https:\/\/t\.me\//.test(F.links.tg)) e.links='Telegram link must be a t.me link.';
+  if(show){ ['img','name','ticker','handle','links'].forEach(k=>{ const el=$('#e_'+k); if(el) el.textContent=e[k]||''; }); }
+  return e;
+}
+function saveDraft(){ const d={...F}; LS.set('draft', d); }
+function refreshPreview(){ const p=$('#preview'); if(p) p.innerHTML=previewHTML(); saveDraft(); }
+function bindLaunch(){
+  const fi=$('#fileIn'), drop=$('#drop');
+  drop.onclick=()=>fi.click();
+  fi.onchange=async()=>{ const f=fi.files[0]; fi.value=''; if(!f) return; try{ F.img=await resizeImage(f); saveDraft(); route(); }catch(err){ $('#e_img').textContent=err; } };
+  drop.ondragover=e=>{e.preventDefault();drop.classList.add('over')}; drop.ondragleave=()=>drop.classList.remove('over');
+  drop.ondrop=async e=>{ e.preventDefault(); drop.classList.remove('over'); const f=e.dataTransfer.files[0]; if(!f) return; try{ F.img=await resizeImage(f); saveDraft(); route(); }catch(err){ $('#e_img').textContent=err; } };
+  const bindIn=(id,key,fn)=>{ const el=$('#'+id); el.oninput=()=>{ let v=el.value; if(fn) { v=fn(v); if(v!==el.value){ const p=el.selectionStart; el.value=v; el.setSelectionRange(p,p);} } if(key.includes('.')){ const [a,b]=key.split('.'); F[a][b]=v; } else F[key]=v; const cnt=$('#c_'+key); if(cnt) cnt.textContent=v.length+'/'+(key==='name'?32:10); refreshPreview(); }; };
+  bindIn('f_name','name'); bindIn('f_ticker','ticker',v=>v.toUpperCase().replace(/[^A-Z0-9]/g,''));
+  bindIn('f_handle','handle',v=>v.toLowerCase().replace(/[^a-z0-9._]/g,'')); bindIn('f_desc','desc'); bindIn('f_catch','catch');
+  bindIn('f_x','links.x'); bindIn('f_tg','links.tg'); bindIn('f_web','links.web');
+  $('#f_name').onblur=()=>{ if(!F.handle&&F.name){ F.handle=F.name.toLowerCase().replace(/\s+/g,'.').replace(/[^a-z0-9._]/g,'').slice(0,24); $('#f_handle').value=F.handle; refreshPreview(); } if(!F.ticker&&F.name){ F.ticker=F.name.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6); $('#f_ticker').value=F.ticker; refreshPreview(); } };
+  $('#suggest').onclick=()=>{ const a=ARCH.find(x=>x.id===F.arch)||ARCH[0]; const n=F.name||'This synth'; const v=(F.vibes[0]||'Bullish').toLowerCase();
+    const opts=[`${n} is a ${a.n.toLowerCase()} with a ${v} streak. Posts ${F.ppd} times a day so $${F.ticker||'TOKEN'} never leaves the timeline.`,`Born on ${CONFIG.CHAIN}. ${a.n} energy, ${F.voice.toLowerCase()} voice, ${v} to the core. Follow for daily reels.`,`${n} lives in the trenches and sleeps when the chart sleeps (never). ${a.q.replace(/"/g,'')}.`];
+    F.desc=opts[Math.floor(Math.random()*opts.length)]; $('#f_desc').value=F.desc; refreshPreview(); };
+  document.querySelectorAll('[data-arch]').forEach(b=>b.onclick=()=>{ F.arch=b.dataset.arch; document.querySelectorAll('[data-arch]').forEach(x=>x.classList.toggle('on',x===b)); refreshPreview(); });
+  document.querySelectorAll('[data-vibe]').forEach(b=>b.onclick=()=>{ const v=b.dataset.vibe; if(F.vibes.includes(v)){ if(F.vibes.length>1) F.vibes=F.vibes.filter(x=>x!==v); } else { if(F.vibes.length>=3) return toast('Up to 3 vibes',1); F.vibes=[...F.vibes,v]; } document.querySelectorAll('[data-vibe]').forEach(x=>x.classList.toggle('on',F.vibes.includes(x.dataset.vibe))); refreshPreview(); });
+  document.querySelectorAll('[data-voice]').forEach(b=>b.onclick=()=>{ F.voice=b.dataset.voice; document.querySelectorAll('[data-voice]').forEach(x=>x.classList.toggle('on',x===b)); refreshPreview(); });
+  document.querySelectorAll('[data-ppd]').forEach(b=>b.onclick=()=>{ F.ppd=+b.dataset.ppd; document.querySelectorAll('[data-ppd]').forEach(x=>x.classList.toggle('on',x===b)); refreshPreview(); });
+  document.querySelectorAll('[data-prev]').forEach(b=>b.onclick=()=>{ prevMode=b.dataset.prev; document.querySelectorAll('[data-prev]').forEach(x=>x.classList.toggle('on',x===b)); refreshPreview(); });
+  const lc=$('#lConnect'); if(lc) lc.onclick=()=>Wallet.connect();
+  $('#launchBtn').onclick=async()=>{
+    if(!Wallet.addr) return Wallet.connect();
+    if(!F.img && F.name) { F.img=genAvatar(F.name,F.vibes[0]); }
+    const e=vLaunch(true); if(Object.keys(e).length){ toast(Object.values(e)[0],1); const k=Object.keys(e)[0]; const el=$('#e_'+k); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+    const btn=$('#launchBtn'); btn.disabled=true; btn.innerHTML='Waiting for signature…';
+    try{
+      const coin={id:uid(),name:clean(F.name),ticker:clean(F.ticker),handle:clean(F.handle),desc:clean(F.desc),catch:clean(F.catch),links:{x:clean(F.links.x),tg:clean(F.links.tg),web:clean(F.links.web)},img:F.img,arch:F.arch,vibes:F.vibes,voice:F.voice,ppd:F.ppd,creator:Wallet.addr,created:Date.now(),ca:'',pt:[]};
+      const msg=`SYNTH · launch $${coin.ticker}\nName: ${coin.name}\nHandle: @${coin.handle}\nCreator: ${coin.creator}\nChain: ${CONFIG.CHAIN}\nTime: ${new Date(coin.created).toISOString()}\n\nSigning is free and moves no funds.`;
+      coin.sig=await Wallet.sign(msg); coin.msg=msg;
+      btn.innerHTML='Launching…';
+      const saved=await Store.launch(coin);
+      F={img:'',name:'',ticker:'',handle:'',desc:'',catch:'',links:{x:'',tg:'',web:''},arch:'rat',vibes:['Bullish'],voice:'Wholesome',ppd:3}; LS.set('draft',null);
+      go('#/coin/'+saved.id);
+      setTimeout(()=>openModal(`<div class="bigav"><img src="${esc(saved.img)}" alt=""></div><h2>${esc(saved.name)} is live</h2><p>$${esc(saved.ticker)} is now in Explore and its first reels are posting. Share it so the trenches meet your character.</p><div class="acts"><button class="btn btn-pri" id="mShare">${I.x}Share on X</button><a class="btn btn-sec" href="#/" onclick="closeModal()">See it in Explore</a></div>`),150);
+      setTimeout(()=>{ const s=$('#mShare'); if(s) s.onclick=()=>shareX(saved); },200);
+    }catch(err){ toast((err&&err.message)||'Signature cancelled',1); btn.disabled=false; btn.innerHTML=I.bolt+'Launch synth'; }
+  };
+  vLaunch(false);
+}
+
+/* calls */
+function pageCalls(){
+  const msgs=Store.calls.slice(-120); const day=Date.now()-864e5; const cnt={};
+  Store.calls.filter(m=>m.ts>day&&m.coin).forEach(m=>{ (cnt[m.coin]=cnt[m.coin]||new Set()).add(m.wallet); });
+  const top=Object.entries(cnt).map(([k,s])=>({c:Store.coin(k),n:s.size})).filter(x=>x.c).sort((a,b)=>b.n-a.n).slice(0,5);
+  return `<h1 class="h1">Calls</h1><p class="sub">The SYNTH trench chat. Call coins launched here, share alpha, talk to other degens.</p>
+  <div class="calls" style="margin-top:24px"><div class="panel chat"><div class="msgs" id="msgs">${msgs.length?msgs.map(m=>{ const c=m.coin&&Store.coin(m.coin); const dev=c&&c.creator===m.wallet; const h=hash(m.wallet);
+    return `<div class="msg"><span class="mav" style="background:linear-gradient(135deg,hsl(${h%360} 70% 55%),hsl(${(h>>8)%360} 70% 30%))"></span><div style="min-width:0"><div class="mh"><b>${short(m.wallet)}</b>${dev?'<span class="dev">DEV</span>':''}<small>${ago(m.ts)}</small></div>${c?`<div class="callcard" onclick="go('#/coin/${esc(c.id)}')"><img src="${esc(c.img)}" alt=""><div><b>$${esc(c.ticker)}</b><div class="muted" style="font-size:12.5px">@${esc(c.handle)}</div></div><span class="called">${I.bolt}Called</span></div>`:''}<div class="mt">${esc(m.text)}</div></div></div>`; }).join(''):`<div class="empty" style="margin:auto;border:0;background:none"><h3>Quiet in the trenches</h3><p>Be the first to call a coin.</p></div>`}</div>
+    <div class="composer"><select class="sel" id="callCoin"><option value="">Call a coin (optional)</option>${Store.coins.map(c=>`<option value="${esc(c.id)}">$${esc(c.ticker)} · ${esc(c.name)}</option>`).join('')}</select>
+    <div class="row2"><input class="inp" id="callText" maxlength="280" placeholder="${Wallet.addr?'Say something to the trenches…':'Connect a wallet to post'}"><button class="btn btn-pri" id="callSend">${I.send}<span>Send</span></button></div>
+    <small>No links, no outside contract addresses. Not financial advice.</small></div></div>
+  <div class="sticky"><div class="panel side-card"><h3>Most called · 24h</h3>${top.length?top.map((x,i)=>`<a class="mc" href="#/coin/${esc(x.c.id)}"><span class="n">${i+1}</span><img src="${esc(x.c.img)}" alt=""><div style="flex:1;min-width:0"><b>$${esc(x.c.ticker)}</b><div class="muted" style="font-size:12.5px">${x.n} caller${x.n>1?'s':''}</div></div></a>`).join(''):'<p class="muted" style="font-size:14px">No calls in the last 24h.</p>'}</div>
+    <div class="panel side-card"><h3>Chat rules</h3><ul class="rules"><li>Only coins launched on SYNTH can be called.</li><li>No links and no outside contract addresses. It keeps scams out.</li><li>Nobody here will ever DM you for your seed phrase.</li><li>Calls are opinions, not investment advice.</li></ul></div></div></div>${footer()}`;
+}
+function bindCalls(){
+  const box=$('#msgs'); box.scrollTop=box.scrollHeight;
+  const send=async()=>{
+    if(!Wallet.addr) return Wallet.connect();
+    const t=clean($('#callText').value); const coin=$('#callCoin').value;
+    if(!t) return toast('Write something first',1);
+    if(/(https?:\/\/|www\.|\.(com|io|xyz|fun|net|org|app)\b|t\.me|0x[a-fA-F0-9]{20,}|[1-9A-HJ-NP-Za-km-z]{32,44})/i.test(t)) return toast('No links or contract addresses in Calls',1);
+    try{ await Store.call({id:uid(),wallet:Wallet.addr,text:t.slice(0,280),coin,ts:Date.now()}); route(); }catch(e){ toast(e.message,1); }
+  };
+  $('#callSend').onclick=send; $('#callText').onkeydown=e=>{ if(e.key==='Enter') send(); };
+}
+
+/* me */
+function pageMe(){
+  if(!Wallet.addr) return `<h1 class="h1">My synths</h1><p class="sub">Coins launched from your wallet and their characters.</p><div class="empty" style="margin-top:26px"><h3>Connect your wallet</h3><p>Your synths live under the wallet that launched them.</p><button class="btn btn-white" onclick="Wallet.connect()">${I.wallet}Connect wallet</button></div>${footer()}`;
+  const mine=Store.coins.filter(c=>c.creator===Wallet.addr);
+  return `<h1 class="h1">My synths</h1><p class="sub">Coins launched from <span class="mono">${short(Wallet.addr)}</span>. Open one to post, share or check your rewards.</p>
+  <div style="margin-top:26px">${mine.length?`<div class="grid">${mine.map(coinCard).join('')}</div>`:`<div class="empty"><div style="display:grid;place-items:center;margin-bottom:16px">${LOGO(64)}</div><h3>No synths yet</h3><p>Give your first coin a face. It takes about two minutes.</p><a class="btn btn-pri" href="#/launch">${I.plus}Launch a coin</a></div>`}</div>
+  <div class="panel side-card" style="margin-top:22px;max-width:520px"><h3>Creator rewards</h3><p style="color:var(--tx2);font-size:14px;line-height:1.55">Your share of trading fees lands here once your coins are live and trading. One click sends everything to your wallet.</p><div class="kv" style="margin-top:6px"><span>Claimable</span><b class="mono">0.0000 ETH</b></div><button class="btn btn-sec btn-block" disabled style="opacity:.5;margin-top:8px">Claim to my wallet</button></div>${footer()}`;
+}
+
+/* docs */
+function pageDocs(){
+  const faq=[
+    ['Does SYNTH hold my keys or funds?','No. You connect your own wallet and only ever sign. SYNTH never sees your private key or seed phrase, and never asks for it.'],
+    ['Why do I sign a message when I launch?','It proves the coin was created by your wallet. Signing a message is free and moves no funds.'],
+    ['What is a synth?','The character attached to a coin: a face, a name, an archetype, a vibe and a voice. It has its own profile and posts reels for the coin.'],
+    ['Can I change the name, ticker or image later?','No. They are permanent once launched, so finish your character first.'],
+    ['How often does my synth post?','You choose 1, 3 or 6 posts a day at launch. As the creator you can also publish new posts from your coin page.'],
+    ['Which chain is SYNTH on?',`${CONFIG.CHAIN}. Use any EVM wallet such as MetaMask, Rabby or Coinbase Wallet.`],
+    ['How do creator rewards work?','Your share of trading fees appears on your coin page and in My synths once your coin is live and trading. You claim it to your wallet in one click.'],
+    ['Is this financial advice?','No. Memecoins are extremely volatile and most go to zero. Only put in what you can afford to lose.']
+  ];
+  return `<div class="docs"><nav class="toc"><span class="eyebrow">Getting started</span><a href="#/docs#overview">Overview</a><a href="#/docs#flow">How a launch works</a><a href="#/docs#synth">Your synth</a><span class="eyebrow">Trenches</span><a href="#/docs#playbook">Playbook</a><a href="#/docs#safety">Safety</a><a href="#/docs#faq">FAQ</a></nav>
+  <div>
+    <section class="panel dsec" id="overview"><span class="eyebrow">Getting started</span><h2>Overview</h2><p>SYNTH is a launchpad on ${CONFIG.CHAIN} where every coin gets a face. You design a character, launch its coin from your own wallet, and the character gets a profile and a feed of reels that keeps the coin on the timeline.</p><ul><li><b>Your keys stay in your wallet.</b> The site only asks for signatures.</li><li><b>A face for every coin.</b> Archetype, vibe and voice shape everything it posts.</li><li><b>Always posting.</b> 1, 3 or 6 posts a day, plus anything you publish yourself.</li></ul></section>
+    <section class="panel dsec" id="flow"><span class="eyebrow">Launch</span><h2>How a launch works</h2><div class="flow"><div><i>01</i><b>Character</b><span>face, name, ticker</span></div><div><i>02</i><b>Vibe</b><span>archetype, vibes, voice</span></div><div><i>03</i><b>Sign</b><span>one free message</span></div><div><i>04</i><b>Live</b><span>Explore + Reels</span></div><div><i>05</i><b>Share</b><span>ready-made X post</span></div></div><p style="margin-top:14px">Name, ticker and image are permanent once launched. The success screen gives you a ready X post with your coin's link.</p></section>
+    <section class="panel dsec" id="synth"><span class="eyebrow">Characters</span><h2>Your synth</h2><ul><li><b>Archetype</b> ${ARCH.map(a=>a.n).join(', ')}.</li><li><b>Vibes</b> up to three of ${VIBES.join(', ')}. They set the colors of its reels.</li><li><b>Voice</b> ${VOICES.join(', ')}. It sets how the character writes.</li><li><b>Face</b> square art that still reads as a tiny avatar.</li><li><b>Rule</b> bullish in tone, never price targets or financial advice.</li></ul></section>
+    <section class="panel dsec" id="playbook"><span class="eyebrow">Trenches</span><h2>Playbook</h2><ul><li><b>Finish the character first.</b> Name, ticker and image are permanent.</li><li><b>Share right away</b> with the ready X post.</li><li><b>Show up.</b> Talk to holders in Calls and post from your coin page.</li><li><b>Don't</b> fake volume, promise returns or use someone's face or name without permission.</li></ul></section>
+    <section class="panel dsec" id="safety"><span class="eyebrow">Safety</span><h2>Stay safe</h2><ul><li>SYNTH will <b>never DM you</b>, on X or anywhere else.</li><li>Nobody from SYNTH will ever ask for your <b>seed phrase, private key or a code</b>.</li><li>The only official contract address is the one shown at the top of this site and posted by <b>${CONFIG.X_HANDLE}</b>.</li><li>Always double-check a contract address before you buy.</li></ul></section>
+    <section class="panel dsec" id="faq"><span class="eyebrow">Help</span><h2>FAQ</h2><div class="faq">${faq.map(([q,a])=>`<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
+  </div></div>${footer()}`;
+}
+function pageAbout(){
+  return `<section class="hero" style="grid-template-columns:1fr;min-height:0;text-align:center;justify-items:center"><div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center">${LOGO(120)}<h1 style="margin-top:26px">Coins deserve<br>a <span class="gtext">face.</span></h1><p style="margin:0 auto">Attention is the product in the trenches. Thousands of coins launch every day and most disappear in minutes, not because they're bad, but because nobody keeps talking about them. SYNTH gives every coin a character that never stops posting.</p><div class="cta" style="justify-content:center"><a class="btn btn-pri" href="#/launch">${I.plus}Launch a coin</a><a class="btn btn-sec" href="${CONFIG.X_URL}" target="_blank" rel="noopener">${I.x}Follow ${CONFIG.X_HANDLE}</a></div></div></section>
+  <div class="feats" style="margin-top:18px"><div class="feat panel"><span class="fi">${I.ghost}</span><b>Character first</b><p>A coin people remember has a face, a voice and a vibe.</p></div><div class="feat panel"><span class="fi">${I.reels}</span><b>Content on autopilot</b><p>Reels and posts keep flowing, even when the creator sleeps.</p></div><div class="feat panel"><span class="fi">${I.shield}</span><b>Non-custodial</b><p>Your wallet, your keys. We only ask for signatures.</p></div><div class="feat panel"><span class="fi">${I.bolt}</span><b>${CONFIG.CHAIN}</b><p>Fast, cheap and EVM: connect any wallet you already use.</p></div></div>${footer()}`;
+}
+
+/* ============ ROUTER ============ */
+async function route(){
+  const raw=curPath(); const [path,anchor]=raw.split('#'); const parts=path.split('/'); const k=parts[0]||'';
+  clearInterval(REEL.timer);
+  renderChrome();
+  const v=$('#view');
+  if(k===''){ v.innerHTML=pageExplore(); bindExplore(); }
+  else if(k==='coin'){ v.innerHTML=pageCoin(parts[1]); bindCoin(parts[1]); }
+  else if(k==='reels'){ v.innerHTML=pageReels(parts[1]); bindReels(); }
+  else if(k==='launch'){ v.innerHTML=pageLaunch(); bindLaunch(); }
+  else if(k==='calls'){ v.innerHTML=pageCalls(); bindCalls(); }
+  else if(k==='me'){ v.innerHTML=pageMe(); bindCards(); }
+  else if(k==='docs'){ v.innerHTML=pageDocs(); }
+  else if(k==='about'){ v.innerHTML=pageAbout(); }
+  else { CUR='#/'; return route(); }
+  document.title = ({'':'SYNTH · coins with a face',reels:'Reels · SYNTH',launch:'Launch · SYNTH',calls:'Calls · SYNTH',me:'My synths · SYNTH',docs:'How it works · SYNTH',about:'About · SYNTH',coin:'Synth · SYNTH'})[k]||'SYNTH';
+  if(anchor){ setTimeout(()=>{ const el=document.getElementById(anchor); if(el) el.scrollIntoView({behavior:'smooth'}); },30); }
+  else if(!route._keep) window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',()=>{ if(location.hash!==CUR){ CUR=location.hash||'#/'; route(); } });
+window.addEventListener('popstate',()=>{ CUR=location.hash||'#/'; route(); });
+document.addEventListener('click',e=>{
+  const ext=e.target.closest('a[target="_blank"]'); if(ext){ return; }
+  const a=e.target.closest('a[href^="#"]'); if(!a) return;
+  e.preventDefault();
+  const h=a.getAttribute('href'); if(h==='#') return;
+  if(!h.startsWith('#/')){ const el=document.getElementById(h.slice(1)); if(el) el.scrollIntoView({behavior:'smooth'}); return; }
+  go(h);
+});
+
+/* ============ BACKGROUND ============ */
+(function(){
+  const c=$('#bg'), x=c.getContext('2d'); let W,H,pts=[]; const dpr=Math.min(2,devicePixelRatio||1);
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function rs(){ W=innerWidth;H=innerHeight;c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';x.setTransform(dpr,0,0,dpr,0,0); pts=Array.from({length:Math.round(W*H/26000)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.3,v:Math.random()*.25+.05,a:Math.random()*.5+.1})); }
+  rs(); addEventListener('resize',rs);
+  let t=0;
+  function draw(){ t+=.004; x.clearRect(0,0,W,H);
+    const gx=W*(.65+.15*Math.sin(t)), gy=H*(.25+.1*Math.cos(t*1.3)); const g=x.createRadialGradient(gx,gy,0,gx,gy,Math.max(W,H)*.6); g.addColorStop(0,'rgba(61,255,122,0.055)'); g.addColorStop(1,'rgba(61,255,122,0)'); x.fillStyle=g; x.fillRect(0,0,W,H);
+    for(const p of pts){ p.y-=p.v; if(p.y<-5){p.y=H+5;p.x=Math.random()*W;} x.fillStyle=`rgba(61,255,122,${p.a*.5})`; x.beginPath(); x.arc(p.x,p.y,p.r,0,7); x.fill(); }
+    if(!reduce) requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ============ INTRO ============ */
+(function(){
+  const el=document.getElementById('intro'); if(!el) return;
+  let seen=false; try{ seen=sessionStorage.getItem('synth_intro')==='1'; sessionStorage.setItem('synth_intro','1'); }catch(e){}
+  if(seen||matchMedia('(prefers-reduced-motion: reduce)').matches){ el.remove(); return; }
+  let done=false; const end=()=>{ if(done) return; done=true; el.classList.add('out'); setTimeout(()=>el.remove(),650); };
+  el.addEventListener('click',end); setTimeout(end,1900);
+})();
+
+/* ============ BOOT ============ */
+(async()=>{
+  renderChrome();
+  $('#view').innerHTML='<div style="padding:80px;text-align:center">'+LOGO(60)+'</div>';
+  await Store.init();
+  route();
+  if(Store.api) setInterval(async()=>{ const k=(curPath().split('/')[0])||''; if(['','calls'].includes(k) && !document.activeElement.matches('input,textarea,select')){ const before=JSON.stringify([Store.coins.length,Store.calls.length]); await Store.refresh(); if(JSON.stringify([Store.coins.length,Store.calls.length])!==before){ route._keep=1; const y=scrollY; await route(); scrollTo(0,y); route._keep=0; } } },15000);
+})();
+</script>
+</body>
+</html>

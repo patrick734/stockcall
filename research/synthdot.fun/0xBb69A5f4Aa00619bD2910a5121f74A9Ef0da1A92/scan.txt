@@ -1,0 +1,9 @@
+
+##### 0xBb69A5f4Aa00619bD2910a5121f74A9Ef0da1A92 (the address you gave) CONTRACT nonce 6 balance 0.000000242769828 ETH
+
+=== 0xBb69A5f4Aa00619bD2910a5121f74A9Ef0da1A92  (the address itself is a contract)  23 bytes
+code 0xef010069007702764179f14f51cdce752f4f775d74e139
+source: explorer 403
+selectors 
+
+done

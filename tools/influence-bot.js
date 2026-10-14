@@ -4,6 +4,7 @@
 //
 //   node tools/influence-bot.js <wallet-name> --targets 0xabc...,@username [options]   buy these creators at launch
 //   node tools/influence-bot.js <wallet-name> --new [options]                          snipe new creators as they appear
+//   node tools/influence-bot.js <wallet-name> --watch @handle1,@handle2 [options]      buy these influencers the moment they are added
 //
 // How "live" works on this contract: buyKeys is blocked while the owner has it paused. There is no per-creator
 // activation, so once it is unpaused anyone can buy any creator's first keys. The bot:
@@ -19,7 +20,11 @@
 // Options:
 //   --live                 send transactions (otherwise dry run)
 //   --targets a,b,@user    creator wallets or site usernames
-//   --new                  watch for new creators
+//   --new                  watch for new creators (new members, trending and new-keys lists)
+//   --watch @a,@b          X handles of influencers not on the site yet: each profile is checked every --watch-ms and
+//                          bought the moment it has a wallet, even if someone else bought first (--max-eth caps it)
+//   --watch-file list.txt  the same, one handle per line
+//   --watch-ms N           how often each watched profile is checked (default 1000)
 //   --follow-first         with --new: also buy when a creator makes the first buy of their own keys on chain
 //   --keys N               keys per creator, decimals allowed down to 0.01 (default 10, the launch cap)
 //   --max-eth X            most to pay per creator, fees included (default 0.015)
@@ -37,7 +42,7 @@ const path = require("path");
 const { fail, unlock } = require("./lib");
 const { ethers } = require("./lib").ethers();
 
-const SITE = "https://influence.family";
+const SITE = process.env.SITE || "https://influence.family";
 const CHAIN = Number(process.env.CHAIN_ID || 4663);
 const KEYS_FALLBACK = process.env.KEYS || "0x570db3863643ca0A8DBB72E510D5Ee3D44F8E24F";
 const PAUSED_SLOT = 2; // Ownable _owner, Ownable2Step _pendingOwner, Pausable _paused
@@ -69,7 +74,7 @@ const iface = new ethers.Interface(ABI);
 // ---------------------------------------------------------------- options
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000 };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -79,6 +84,9 @@ function parseArgs(argv) {
     };
     if (a === "--live") o.live = true;
     else if (a === "--new") o.watchNew = true;
+    else if (a === "--watch") o.watch.push(...val().split(",").map((x) => x.trim()).filter(Boolean));
+    else if (a === "--watch-file") o.watch.push(...fs.readFileSync(val(), "utf8").split(/[\s,]+/).map((x) => x.trim()).filter((x) => x && !x.startsWith("#")));
+    else if (a === "--watch-ms") o.watchMs = Math.max(250, Number(val()));
     else if (a === "--follow-first") o.followFirst = true;
     else if (a === "--targets") o.targets.push(...val().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--keys") o.keys = val();
@@ -94,7 +102,7 @@ function parseArgs(argv) {
   }
   o.wallet = rest[0];
   if (!o.wallet) fail("usage: node tools/influence-bot.js <wallet-name> --targets 0x...,@user | --new [--live]  (see the top of this file)");
-  if (!o.targets.length && !o.watchNew) fail("give --targets and/or --new");
+  if (!o.targets.length && !o.watchNew && !o.watch.length) fail("give --targets, --watch and/or --new");
   o.units = BigInt(Math.round(Number(o.keys) * 100));
   if (o.units <= 0n) fail("--keys must be at least 0.01");
   o.maxWei = ethers.parseEther(o.maxEth);
@@ -361,40 +369,88 @@ async function main() {
     await Promise.all(targets.map((t) => buyNow(t.address, t.label)));
   }
 
-  if (!o.watchNew) return;
+  if (!o.watchNew && !o.watch.length) return;
 
-  // ---------------------------------------------------------------- new creators
+  // ---------------------------------------------------------------- new creators and the watchlist
   while (await keys.paused().catch(() => true)) await sleep(1000);
-  log(`watching for new creators (site feed every 3 s${o.followFirst ? ", on-chain first buys every second" : ""})`);
   const seen = new Set(Object.keys(state.bought));
+  const handled = new Set(); // watchlist handles already bought or skipped
+  const sources = [o.watch.length && `${o.watch.length} watched profile(s) every ${o.watchMs} ms`, o.watchNew && "new members and new keys every 3 s", o.followFirst && "on-chain first buys every second"].filter(Boolean);
+  log(`watching: ${sources.join(", ")}`);
+
+  /** A member seen on the site: buy if they have a wallet, pass the filters and (unless watched) have no keys out. */
+  async function consider(u, watched) {
+    const a = creatorAddress(u);
+    if (!a) return false;
+    const label = `@${u.username}`;
+    if (seen.has(a)) {
+      if (watched && state.bought[a]) log(`${label}: already bought on an earlier run (${state.bought[a].tx})`);
+      return true;
+    }
+    seen.add(a);
+    if (!watched && ((u.points ?? 0) < o.minPoints || (u.followersCount ?? 0) < o.minFollowers)) return true;
+    const supply = await keys.keysSupply(a);
+    if (supply > 0n && !watched) {
+      log(`${label}: keys already bought by someone; skip`);
+      return true;
+    }
+    if (supply > 0n) log(`${label}: ${keysOf(supply)} keys already out, buying anyway (watched; --max-eth still caps the price)`);
+    else log(`${label}: wallet ${a} just appeared with no keys out`);
+    buyNow(a, label);
+    return true;
+  }
+
+  // Each watched profile is checked on its own timer, spread over --watch-ms, so a new one is seen within that time.
+  o.watch.forEach((h, i) => {
+    const name = h.replace(/^@/, "");
+    let backoff = 0;
+    const tick = async () => {
+      if (handled.has(name)) return;
+      try {
+        const r = await fetch(`${SITE}/api/users/${encodeURIComponent(name)}`, { headers: { accept: "application/json", "user-agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(5000) });
+        if (r.status === 429) backoff = Math.min(30_000, (backoff || 1000) * 2);
+        else {
+          backoff = 0;
+          if (r.ok) {
+            const j = await r.json();
+            const u = j.user || j;
+            if (u && u.username && creatorAddress(u)) {
+              if (await consider(u, true)) handled.add(name);
+            }
+          }
+        }
+      } catch (e) {
+        if (!tick.warned) log(`@${name}: profile check failed (${decodeError(e)}); retrying`);
+        tick.warned = true;
+      }
+      if (!handled.has(name)) setTimeout(tick, o.watchMs + backoff);
+    };
+    setTimeout(tick, Math.floor((o.watchMs * i) / o.watch.length));
+  });
+
   let fromBlock = (await p.getBlockNumber()) + 1;
   let lastFeed = 0;
   for (;;) {
     if (spent >= o.budgetWei) {
       log(`budget used (${eth(spent)}); stopping`);
-      return;
+      process.exit(0);
     }
-    if (Date.now() - lastFeed > 3000) {
+    if (o.watchNew && Date.now() - lastFeed > 3000) {
       lastFeed = Date.now();
-      try {
-        const j = await getJson(`${SITE}/api/feed?tab=newusers`);
-        for (const u of j.users || []) {
-          const a = creatorAddress(u);
-          if (!a || seen.has(a)) continue;
-          const label = `@${u.username}`;
-          if ((u.points ?? 0) < o.minPoints || (u.followersCount ?? 0) < o.minFollowers) {
-            seen.add(a);
-            continue;
-          }
-          seen.add(a);
-          if ((await keys.keysSupply(a)) > 0n) {
-            log(`${label}: keys already bought by someone; skip`);
-            continue;
-          }
-          buyNow(a, label);
+      const lists = await Promise.allSettled([getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`)]);
+      const members = [];
+      for (const l of lists) {
+        if (l.status !== "fulfilled") continue;
+        const j = l.value;
+        members.push(...(j.users || []), ...(j.members || []), ...(j.newKeys || []).map((k) => k.user || k), ...(j.keys || []).map((k) => k.user || k));
+      }
+      if (!lists.some((l) => l.status === "fulfilled")) log(`site feed: ${lists[0].reason?.message}`);
+      for (const u of members) {
+        try {
+          await consider(u, o.watch.some((h) => h.replace(/^@/, "").toLowerCase() === String(u.username).toLowerCase()));
+        } catch (e) {
+          log(`@${u.username}: ${decodeError(e)}`);
         }
-      } catch (e) {
-        log(`feed: ${e.message}`);
       }
     }
     if (o.followFirst) {
@@ -415,7 +471,7 @@ async function main() {
         log(`logs: ${e.message}`);
       }
     }
-    await sleep(1000);
+    await sleep(o.followFirst || o.watchNew ? 1000 : 60_000);
   }
 }
 

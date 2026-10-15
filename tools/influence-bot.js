@@ -25,6 +25,7 @@
 //                          bought the moment it has a wallet, even if someone else bought first (--max-eth caps it)
 //   --watch-file list.txt  the same, one handle per line
 //   --watch-ms N           how often each watched profile is checked (default 1000)
+//   --feed-ms N            --new: how often the site's member lists are read (default 1000)
 //   --follow-first         with --new: also buy when a creator makes the first buy of their own keys on chain
 //   --keys N               keys per creator, decimals allowed down to 0.01 (default 10, the launch cap)
 //   --max-eth X            most to pay per creator, fees included (default 0.015)
@@ -74,7 +75,7 @@ const iface = new ethers.Interface(ABI);
 // ---------------------------------------------------------------- options
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000 };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000 };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -87,6 +88,7 @@ function parseArgs(argv) {
     else if (a === "--watch") o.watch.push(...val().split(",").map((x) => x.trim()).filter(Boolean));
     else if (a === "--watch-file") o.watch.push(...fs.readFileSync(val(), "utf8").split(/[\s,]+/).map((x) => x.trim()).filter((x) => x && !x.startsWith("#")));
     else if (a === "--watch-ms") o.watchMs = Math.max(250, Number(val()));
+    else if (a === "--feed-ms") o.feedMs = Math.max(300, Number(val()));
     else if (a === "--follow-first") o.followFirst = true;
     else if (a === "--targets") o.targets.push(...val().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--keys") o.keys = val();
@@ -208,7 +210,8 @@ async function main() {
   const base = fee.gasPrice ?? 10_000_000n;
   const gas = { maxFeePerGas: base * 3n, maxPriorityFeePerGas: 0n }; // FCFS sequencer: a tip does not buy order
   const state = loadState();
-  let spent = 0n;
+  let spent = BigInt(state.spent || "0"); // kept across restarts, so --budget is a lifetime cap
+  if (spent) log(`already spent ${eth(spent)} on earlier runs (delete ${STATE_FILE} to reset)`);
   let nonce = await p.getTransactionCount(me, "pending");
   const busy = new Set();
 
@@ -278,6 +281,7 @@ async function main() {
         if (ev?.name === "Trade" && ev.args.trader === me) {
           const paid = ev.args.ethAmount + ev.args.protocolFee + ev.args.creatorFee + (ev.args.ethAmount * rf) / 10000n; // unpaid referral halves go to the protocol
           log(`${label}: BOUGHT ${keysOf(ev.args.amount)} keys for ~${eth(paid)}; supply now ${keysOf(ev.args.supply)}, you hold ${keysOf(ev.args.holderBalance)}  block ${rc.blockNumber}  ${hash}`);
+          state.spent = (BigInt(state.spent || "0") + paid).toString();
           state.bought[creator] = { label, keys: keysOf(ev.args.holderBalance), tx: hash, at: new Date().toISOString() };
           saveState(state);
         }
@@ -375,7 +379,7 @@ async function main() {
   while (await keys.paused().catch(() => true)) await sleep(1000);
   const seen = new Set(Object.keys(state.bought));
   const handled = new Set(); // watchlist handles already bought or skipped
-  const sources = [o.watch.length && `${o.watch.length} watched profile(s) every ${o.watchMs} ms`, o.watchNew && "new members and new keys every 3 s", o.followFirst && "on-chain first buys every second"].filter(Boolean);
+  const sources = [o.watch.length && `${o.watch.length} watched profile(s) every ${o.watchMs} ms`, o.watchNew && `new members and new keys every ${o.feedMs} ms`, o.followFirst && "on-chain first buys every second"].filter(Boolean);
   log(`watching: ${sources.join(", ")}`);
 
   /** A member seen on the site: buy if they have a wallet, pass the filters and (unless watched) have no keys out. */
@@ -435,7 +439,7 @@ async function main() {
       log(`budget used (${eth(spent)}); stopping`);
       process.exit(0);
     }
-    if (o.watchNew && Date.now() - lastFeed > 3000) {
+    if (o.watchNew && Date.now() - lastFeed >= o.feedMs) {
       lastFeed = Date.now();
       const lists = await Promise.allSettled([getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`)]);
       const members = [];
@@ -471,7 +475,7 @@ async function main() {
         log(`logs: ${e.message}`);
       }
     }
-    await sleep(o.followFirst || o.watchNew ? 1000 : 60_000);
+    await sleep(o.watchNew ? Math.min(o.feedMs, 1000) : o.followFirst ? 1000 : 60_000);
   }
 }
 

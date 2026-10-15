@@ -13,7 +13,11 @@ function ethers() {
   try {
     return require(path.join(ROOT, "contracts", "node_modules", "ethers"));
   } catch {
-    fail("contracts/node_modules is missing. Run: (cd contracts && npm ci)");
+    try {
+      return require("ethers"); // a standalone copy of the tools (a VPS) with its own node_modules
+    } catch {
+      fail("ethers is missing. In the repo run: (cd contracts && npm ci). On a VPS run: npm i ethers@6");
+    }
   }
 }
 

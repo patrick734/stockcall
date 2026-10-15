@@ -32,8 +32,10 @@
 //   --watch-file list.txt  the same, one handle per line
 //   --watch-ms N           how often each watched profile is checked (default 1000)
 //   --feed-ms N            --new: how often the site's member lists are read (default 1000)
-//   --chain-ms N           --new: how often the chain is checked for first buys (default 300); these show up
+//   --chain-ms N           --new: how often the chain is checked for first buys (default 150); these show up
 //                          seconds before the site's lists do, so they are the earliest signal
+//   --first-buyer 0x...    a wallet whose first buys mark the creators to buy (the wallet that seeds every
+//                          dev-added profile): its first buys are followed instantly, without the profile lookup
 //   --follow-first         with --new: also buy when a creator makes the first buy of their own keys on chain
 //   --keys N               keys per creator, decimals allowed down to 0.01 (default 10, the launch cap)
 //   --max-eth X            most to pay per creator, fees included (default 0.015)
@@ -83,7 +85,7 @@ const iface = new ethers.Interface(ABI);
 // ---------------------------------------------------------------- options
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 300, observe: false, require: [], any: false, maxSupply: 0n };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 150, firstBuyers: [], observe: false, require: [], any: false, maxSupply: 0n };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -101,7 +103,8 @@ function parseArgs(argv) {
     else if (a === "--watch-file") o.watch.push(...fs.readFileSync(val(), "utf8").split(/[\s,]+/).map((x) => x.trim()).filter((x) => x && !x.startsWith("#")));
     else if (a === "--watch-ms") o.watchMs = Math.max(250, Number(val()));
     else if (a === "--feed-ms") o.feedMs = Math.max(300, Number(val()));
-    else if (a === "--chain-ms") o.chainMs = Math.max(100, Number(val()));
+    else if (a === "--chain-ms") o.chainMs = Math.max(50, Number(val()));
+    else if (a === "--first-buyer") o.firstBuyers.push(...val().split(",").map((x) => ethers.getAddress(x.trim())));
     else if (a === "--follow-first") o.followFirst = true;
     else if (a === "--targets") o.targets.push(...val().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--keys") o.keys = val();
@@ -118,7 +121,7 @@ function parseArgs(argv) {
   o.wallet = rest[0];
   if (o.observe) return o;
   if (!o.wallet) fail("usage: node tools/influence-bot.js <wallet-name> --targets 0x...,@user | --new [--live]  (see the top of this file)");
-  if (!o.targets.length && !o.watchNew && !o.watch.length) fail("give --targets, --watch and/or --new");
+  if (!o.targets.length && !o.watchNew && !o.watch.length && !o.firstBuyers.length) fail("give --targets, --watch, --new and/or --first-buyer");
   if (o.watchNew && o.live && !o.require.length && !o.any)
     fail("--new --live needs --require (which profiles to buy, for example the ones the dev added; find the field with --observe), or --any to buy every new member");
   o.units = BigInt(Math.round(Number(o.keys) * 100));
@@ -344,6 +347,12 @@ async function main() {
   const fee = await p.getFeeData();
   const base = fee.gasPrice ?? 10_000_000n;
   const gas = { maxFeePerGas: base * 3n, maxPriorityFeePerGas: 0n }; // FCFS sequencer: a tip does not buy order
+  setInterval(async () => {
+    try {
+      const f = await p.getFeeData();
+      if (f.gasPrice) gas.maxFeePerGas = f.gasPrice * 3n;
+    } catch {}
+  }, 30_000).unref();
   const state = loadState();
   let spent = BigInt(state.spent || "0"); // kept across restarts, so --budget is a lifetime cap
   if (spent) log(`already spent ${eth(spent)} on earlier runs (delete ${STATE_FILE} to reset)`);
@@ -452,6 +461,39 @@ async function main() {
     }
   }
 
+  /** Gas limit for buys sent without a simulation: measured once on a fresh creator, with headroom. */
+  let fastLimit = o.gasLimit ?? 1_500_000n;
+  if (!paused && !o.gasLimit) {
+    try {
+      const probe = buyTx(ethers.Wallet.createRandom().address, LAUNCH_CAP, o.maxWei);
+      fastLimit = (BigInt(await p.send("eth_estimateGas", [{ from: me, to: probe.to, data: probe.data, value: ethers.toQuantity(probe.value) }, "latest"])) * 3n) / 2n;
+    } catch {}
+  }
+
+  /** Buys one creator right away, nothing checked first: used for on-chain first buys, where every millisecond
+   *  counts. The contract enforces the limits: msg.value (--max-eth) is the most paid, the rest is refunded, and a
+   *  buy over the launch cap or over --max-eth reverts. */
+  async function buyFast(creator, label, t0) {
+    if (busy.has(creator)) return;
+    busy.add(creator);
+    try {
+      if (spent + o.maxWei > o.budgetWei) return log(`${label}: skip, budget used up (${eth(spent)} committed)`);
+      const units = o.units > LAUNCH_CAP ? LAUNCH_CAP : o.units;
+      const tx = buyTx(creator, units, o.maxWei);
+      if (!o.live) return log(`${label}: would buy ${keysOf(units)} keys now, paying at most ${eth(o.maxWei)} (${Date.now() - t0} ms after seeing the first buy)`);
+      spent += o.maxWei;
+      const signed = await wallet.signTransaction({ ...tx, ...gas, chainId: CHAIN, type: 2, nonce: nonce++, gasLimit: fastLimit });
+      const hash = await broadcast(signed);
+      log(`${label}: sent ${hash} (${Date.now() - t0} ms after seeing the first buy)`);
+      await report(hash, label, creator);
+    } catch (e) {
+      log(`${label}: error ${decodeError(e)}`);
+      nonce = await p.getTransactionCount(me, "pending");
+    } finally {
+      busy.delete(creator);
+    }
+  }
+
   // ---------------------------------------------------------------- launch: pre-signed, fired on unpause
   const targets = [];
   for (const t of o.targets) {
@@ -508,14 +550,14 @@ async function main() {
     await Promise.all(targets.map((t) => buyNow(t.address, t.label)));
   }
 
-  if (!o.watchNew && !o.watch.length) return;
+  if (!o.watchNew && !o.watch.length && !o.firstBuyers.length && !o.followFirst) return;
 
   // ---------------------------------------------------------------- new creators and the watchlist
   while (await keys.paused().catch(() => true)) await sleep(1000);
   const seen = new Set(Object.keys(state.bought));
   const handled = new Set(); // watchlist handles already bought or skipped
   const sources = [o.watch.length && `${o.watch.length} watched profile(s) every ${o.watchMs} ms`, o.watchNew && `new members and new keys every ${o.feedMs} ms`, (o.watchNew || o.followFirst) && `on-chain first buys every ${o.chainMs} ms`].filter(Boolean);
-  log(`watching: ${sources.join(", ")}`);
+  if (sources.length) log(`watching: ${sources.join(", ")}`);
 
   /** A member seen on the site: buy if they have a wallet, pass the filters and (unless watched) have no keys out. */
   const looked = new Set(); // list members whose profile was already fetched
@@ -570,32 +612,40 @@ async function main() {
   // On-chain first buys are the earliest public sign of a new creator: the site's lists show them seconds later.
   // Each one is looked up on the site by address and bought if the profile passes --require (with --new), or if
   // the creator bought their own first key (--follow-first alone).
-  if (o.watchNew || o.followFirst) {
+  if (o.watchNew || o.followFirst || o.firstBuyers.length) {
+    if (o.firstBuyers.length) log(`following first buys by ${o.firstBuyers.join(", ")} instantly`);
     let fromBlock = (await p.getBlockNumber()) + 1;
     (async () => {
       for (;;) {
         try {
-          const head = await p.getBlockNumber();
-          if (head >= fromBlock) {
-            const logs = await p.getLogs({ address: keysAddr, topics: [iface.getEvent("Trade").topicHash], fromBlock, toBlock: head });
-            fromBlock = head + 1;
-            for (const l of logs) {
-              const { trader, creator, isBuy, amount, supply } = iface.parseLog(l).args;
-              if (!isBuy || supply !== amount || trader === me || seen.has(creator)) continue;
-              if (o.watchNew) {
-                const pr = await profile(creator).catch(() => null);
-                if (!pr) {
-                  log(`first buy of ${creator} by ${trader}: no profile on the site; skip`);
-                  seen.add(creator);
-                  continue;
-                }
-                log(`first buy of @${pr.user.username} (${keysOf(amount)} keys by ${trader === creator ? "the creator" : trader}), block ${l.blockNumber}`);
-                const watched = o.watch.some((h) => h.replace(/^@/, "").toLowerCase() === pr.user.username.toLowerCase());
-                if (!(await consider(pr.user, watched, creator))) seen.add(creator);
-              } else if (trader === creator) {
-                seen.add(creator);
-                buyNow(creator, `creator ${creator.slice(0, 10)}`);
+          // one HTTP request: ethers batches calls made together
+          const [head, logs] = await Promise.all([p.getBlockNumber(), p.getLogs({ address: keysAddr, topics: [iface.getEvent("Trade").topicHash], fromBlock, toBlock: "latest" })]);
+          fromBlock = Math.max(head, ...logs.map((l) => l.blockNumber)) + 1;
+          for (const l of logs) {
+            const { trader, creator, isBuy, amount, supply } = iface.parseLog(l).args;
+            if (!isBuy || supply !== amount || trader === me || seen.has(creator)) continue;
+            const t0 = Date.now();
+            seen.add(creator);
+            if (o.firstBuyers.includes(trader)) {
+              buyFast(creator, `creator ${creator.slice(0, 10)}`, t0);
+              profile(creator)
+                .then((pr) => pr && log(`creator ${creator.slice(0, 10)} is @${pr.user.username} (points=${pr.user.points}, member #${pr.user.memberNo})`))
+                .catch(() => {});
+              continue;
+            }
+            if (o.watchNew) {
+              const pr = await profile(creator).catch(() => null);
+              if (!pr) {
+                log(`first buy of ${creator} by ${trader}: no profile on the site; skip`);
+                continue;
               }
+              const u = pr.user;
+              const watched = o.watch.some((h) => h.replace(/^@/, "").toLowerCase() === u.username.toLowerCase());
+              const passes = watched || ((u.points ?? 0) >= o.minPoints && (u.followersCount ?? 0) >= o.minFollowers && matches(u, o.require) && supply <= o.maxSupply);
+              log(`first buy of @${u.username} (${keysOf(amount)} keys by ${trader === creator ? "the creator" : trader}), block ${l.blockNumber}: ${passes ? "matches" : "does not match, skip"}`);
+              if (passes) buyFast(creator, `@${u.username}`, t0);
+            } else if (o.followFirst && trader === creator) {
+              buyFast(creator, `creator ${creator.slice(0, 10)}`, t0);
             }
           }
         } catch (e) {

@@ -25,6 +25,7 @@
 //   --require RULE         --new buys only members matching every rule: field=value, field>N, field, !field
 //                          (for example --require genesisRank or --require registered=false); see --observe
 //   --any                  --new buys every new member (no --require)
+//   --max-supply N         --new: still buy when up to N keys are already out (default 0: only untouched creators)
 //   --observe              buys nothing, needs no wallet: logs every new or changed member with all their fields
 //   --watch @a,@b          X handles of influencers not on the site yet: each profile is checked every --watch-ms and
 //                          bought the moment it has a wallet, even if someone else bought first (--max-eth caps it)
@@ -80,7 +81,7 @@ const iface = new ethers.Interface(ABI);
 // ---------------------------------------------------------------- options
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, observe: false, require: [], any: false };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, observe: false, require: [], any: false, maxSupply: 0n };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -92,6 +93,7 @@ function parseArgs(argv) {
     else if (a === "--new") o.watchNew = true;
     else if (a === "--observe") o.observe = true;
     else if (a === "--any") o.any = true;
+    else if (a === "--max-supply") o.maxSupply = BigInt(Math.round(Number(val()) * 100));
     else if (a === "--require") o.require.push(parseRule(val()));
     else if (a === "--watch") o.watch.push(...val().split(",").map((x) => x.trim()).filter(Boolean));
     else if (a === "--watch-file") o.watch.push(...fs.readFileSync(val(), "utf8").split(/[\s,]+/).map((x) => x.trim()).filter((x) => x && !x.startsWith("#")));
@@ -532,11 +534,11 @@ async function main() {
     }
     seen.add(a);
     const supply = await keys.keysSupply(a);
-    if (supply > 0n && !watched) {
-      log(`${label}: keys already bought by someone; skip`);
+    if (supply > o.maxSupply && !watched) {
+      log(`${label}: ${keysOf(supply)} keys already out (over --max-supply ${keysOf(o.maxSupply)}); skip`);
       return true;
     }
-    if (supply > 0n) log(`${label}: ${keysOf(supply)} keys already out, buying anyway (watched; --max-eth still caps the price)`);
+    if (supply > 0n) log(`${label}: ${keysOf(supply)} keys already out, buying anyway (--max-eth still caps the price)`);
     else log(`${label}: wallet ${a} just appeared with no keys out`);
     buyNow(a, label);
     return true;

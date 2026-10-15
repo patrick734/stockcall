@@ -5,6 +5,7 @@
 //   node tools/influence-bot.js <wallet-name> --targets 0xabc...,@username [options]   buy these creators at launch
 //   node tools/influence-bot.js <wallet-name> --new [options]                          snipe new creators as they appear
 //   node tools/influence-bot.js <wallet-name> --watch @handle1,@handle2 [options]      buy these influencers the moment they are added
+//   node tools/influence-bot.js --observe                                              log new members' fields (no wallet, no buys)
 //
 // How "live" works on this contract: buyKeys is blocked while the owner has it paused. There is no per-creator
 // activation, so once it is unpaused anyone can buy any creator's first keys. The bot:
@@ -20,7 +21,11 @@
 // Options:
 //   --live                 send transactions (otherwise dry run)
 //   --targets a,b,@user    creator wallets or site usernames
-//   --new                  watch for new creators (new members, trending and new-keys lists)
+//   --new                  watch for new creators (new members, trending and new-keys lists); live it needs --require
+//   --require RULE         --new buys only members matching every rule: field=value, field>N, field, !field
+//                          (for example --require genesisRank or --require registered=false); see --observe
+//   --any                  --new buys every new member (no --require)
+//   --observe              buys nothing, needs no wallet: logs every new or changed member with all their fields
 //   --watch @a,@b          X handles of influencers not on the site yet: each profile is checked every --watch-ms and
 //                          bought the moment it has a wallet, even if someone else bought first (--max-eth caps it)
 //   --watch-file list.txt  the same, one handle per line
@@ -75,7 +80,7 @@ const iface = new ethers.Interface(ABI);
 // ---------------------------------------------------------------- options
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000 };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, observe: false, require: [], any: false };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -85,6 +90,9 @@ function parseArgs(argv) {
     };
     if (a === "--live") o.live = true;
     else if (a === "--new") o.watchNew = true;
+    else if (a === "--observe") o.observe = true;
+    else if (a === "--any") o.any = true;
+    else if (a === "--require") o.require.push(parseRule(val()));
     else if (a === "--watch") o.watch.push(...val().split(",").map((x) => x.trim()).filter(Boolean));
     else if (a === "--watch-file") o.watch.push(...fs.readFileSync(val(), "utf8").split(/[\s,]+/).map((x) => x.trim()).filter((x) => x && !x.startsWith("#")));
     else if (a === "--watch-ms") o.watchMs = Math.max(250, Number(val()));
@@ -103,8 +111,11 @@ function parseArgs(argv) {
     else rest.push(a);
   }
   o.wallet = rest[0];
+  if (o.observe) return o;
   if (!o.wallet) fail("usage: node tools/influence-bot.js <wallet-name> --targets 0x...,@user | --new [--live]  (see the top of this file)");
   if (!o.targets.length && !o.watchNew && !o.watch.length) fail("give --targets, --watch and/or --new");
+  if (o.watchNew && o.live && !o.require.length && !o.any)
+    fail("--new --live needs --require (which profiles to buy, for example the ones the dev added; find the field with --observe), or --any to buy every new member");
   o.units = BigInt(Math.round(Number(o.keys) * 100));
   if (o.units <= 0n) fail("--keys must be at least 0.01");
   o.maxWei = ethers.parseEther(o.maxEth);
@@ -113,6 +124,24 @@ function parseArgs(argv) {
 }
 
 // ---------------------------------------------------------------- helpers
+
+/** --require rules: "field=value" (true, false, null, numbers or text), "field" (set and not false/0), "!field" (unset). */
+function parseRule(text) {
+  let m = text.match(/^!([\w.]+)$/);
+  if (m) return { text, field: m[1], test: (v) => v === undefined || v === null || v === false || v === 0 || v === "" };
+  m = text.match(/^([\w.]+)(>=|<=|!=|=|>|<)(.*)$/);
+  if (!m) {
+    if (!/^[\w.]+$/.test(text)) fail(`bad --require "${text}"`);
+    return { text, field: text, test: (v) => v !== undefined && v !== null && v !== false && v !== 0 && v !== "" };
+  }
+  const [, field, op, raw] = m;
+  const want = raw === "true" ? true : raw === "false" ? false : raw === "null" ? null : raw !== "" && !isNaN(Number(raw)) ? Number(raw) : raw;
+  const norm = (v) => (v === undefined ? null : typeof want === "number" && typeof v === "string" && !isNaN(Number(v)) ? Number(v) : v);
+  const ops = { "=": (v) => norm(v) === want, "!=": (v) => norm(v) !== want, ">": (v) => norm(v) > want, "<": (v) => norm(v) < want, ">=": (v) => norm(v) >= want, "<=": (v) => norm(v) <= want };
+  return { text, field, test: ops[op] };
+}
+const fieldOf = (u, path) => path.split(".").reduce((x, k) => (x == null ? undefined : x[k]), u);
+const matches = (u, rules) => rules.every((r) => r.test(fieldOf(u, r.field)));
 
 const eth = (w) => `${Number(ethers.formatEther(w)).toFixed(6)} ETH`;
 const keysOf = (u) => (Number(u) / 100).toString();
@@ -164,8 +193,50 @@ function decodeError(e) {
 
 // ---------------------------------------------------------------- bot
 
+/** --observe: buys nothing and needs no wallet. Prints every member the site lists as they appear or change, and
+ *  appends each full profile to ~/.stockcall/influence-members.jsonl, to find what marks the profiles the dev adds. */
+async function observe(o) {
+  const file = path.join(os.homedir(), ".stockcall", "influence-members.jsonl");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const known = new Map();
+  const SHOW = ["memberNo", "registered", "wallet", "appWallet", "walletVerified", "genesisRank", "points", "score", "tier", "keySupply", "followersCount", "joinedAt"];
+  let first = true;
+  log(`observing ${SITE} every ${o.feedMs} ms; full profiles go to ${file}. Ctrl-C to stop.`);
+  for (;;) {
+    const lists = await Promise.allSettled([getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`)]);
+    const members = [];
+    for (const l of lists) {
+      if (l.status !== "fulfilled") continue;
+      const j = l.value;
+      for (const [src, arr] of [["newusers", j.users], ["members", j.members], ["newKeys", j.newKeys], ["keys", j.keys]]) for (const x of arr || []) members.push([src, x.user || x]);
+    }
+    if (!lists.some((l) => l.status === "fulfilled")) log(`site: ${lists[0].reason?.message}`);
+    for (const [src, u] of members) {
+      const id = u.id || u.username;
+      const json = JSON.stringify(u);
+      const before = known.get(id);
+      if (before === json) continue;
+      known.set(id, json);
+      fs.appendFileSync(file, JSON.stringify({ seenAt: new Date().toISOString(), list: src, initial: first, profile: u }) + "\n");
+      if (first) continue;
+      if (!before) {
+        const extra = Object.keys(u).filter((k) => !SHOW.includes(k) && !["id", "username", "displayName", "avatarUrl", "bannerUrl", "bio", "earnedPoints", "staked", "keyPrice", "followingCount", "postsCount", "following"].includes(k));
+        log(`NEW @${u.username} (${u.displayName}) [${src}] ${SHOW.map((k) => `${k}=${JSON.stringify(u[k])}`).join(" ")}${extra.length ? "  other: " + extra.map((k) => `${k}=${JSON.stringify(u[k])}`).join(" ") : ""}`);
+      } else {
+        const old = JSON.parse(before);
+        const diff = Object.keys({ ...old, ...u }).filter((k) => JSON.stringify(old[k]) !== JSON.stringify(u[k]) && !["points", "score", "earnedPoints", "followersCount", "followingCount", "postsCount"].includes(k));
+        if (diff.length) log(`CHANGED @${u.username}: ${diff.map((k) => `${k} ${JSON.stringify(old[k])} -> ${JSON.stringify(u[k])}`).join(", ")}`);
+      }
+    }
+    if (first) log(`${known.size} members listed now (saved); printing only new ones and changes from here`);
+    first = false;
+    await sleep(o.feedMs);
+  }
+}
+
 async function main() {
   const o = parseArgs(process.argv.slice(2));
+  if (o.observe) return observe(o);
   const rpc = process.env.RPC || "https://rpc.mainnet.chain.robinhood.com";
   const p = new ethers.JsonRpcProvider(rpc, CHAIN, { staticNetwork: true });
   const p2 = process.env.RPC2 ? new ethers.JsonRpcProvider(process.env.RPC2, CHAIN, { staticNetwork: true }) : null;
@@ -392,7 +463,7 @@ async function main() {
       return true;
     }
     seen.add(a);
-    if (!watched && ((u.points ?? 0) < o.minPoints || (u.followersCount ?? 0) < o.minFollowers)) return true;
+    if (!watched && ((u.points ?? 0) < o.minPoints || (u.followersCount ?? 0) < o.minFollowers || !matches(u, o.require))) return true;
     const supply = await keys.keysSupply(a);
     if (supply > 0n && !watched) {
       log(`${label}: keys already bought by someone; skip`);

@@ -480,11 +480,11 @@ async function main() {
       if (spent + o.maxWei > o.budgetWei) return log(`${label}: skip, budget used up (${eth(spent)} committed)`);
       const units = o.units > LAUNCH_CAP ? LAUNCH_CAP : o.units;
       const tx = buyTx(creator, units, o.maxWei);
-      if (!o.live) return log(`${label}: would buy ${keysOf(units)} keys now, paying at most ${eth(o.maxWei)} (${Date.now() - t0} ms after seeing the first buy)`);
+      if (!o.live) return log(`${label}: would buy ${keysOf(units)} keys now, paying at most ${eth(o.maxWei)} (${Date.now() - t0} ms after spotting it)`);
       spent += o.maxWei;
       const signed = await wallet.signTransaction({ ...tx, ...gas, chainId: CHAIN, type: 2, nonce: nonce++, gasLimit: fastLimit });
       const hash = await broadcast(signed);
-      log(`${label}: sent ${hash} (${Date.now() - t0} ms after seeing the first buy)`);
+      log(`${label}: sent ${hash} (${Date.now() - t0} ms after spotting it)`);
       await report(hash, label, creator);
     } catch (e) {
       log(`${label}: error ${decodeError(e)}`);
@@ -598,7 +598,17 @@ async function main() {
       try {
         const p = await profile(name);
         backoff = 0;
-        if (p && p.address && (await consider(p.user, true, p.address))) handled.add(name);
+        if (p && p.address) {
+          handled.add(name);
+          const t0 = Date.now();
+          if (seen.has(p.address)) {
+            if (state.bought[p.address]) log(`@${p.user.username}: already bought on an earlier run (${state.bought[p.address].tx})`);
+          } else {
+            seen.add(p.address);
+            log(`@${p.user.username}: profile is live, key address ${p.address}, ${keysOf(BigInt(p.user.keySupply || 0))} keys out`);
+            buyFast(p.address, `@${p.user.username}`, t0);
+          }
+        }
       } catch (e) {
         if (e.status === 429) backoff = Math.min(30_000, (backoff || 1000) * 2);
         if (!tick.warned) log(`@${name}: profile check failed (${decodeError(e)}); retrying`);

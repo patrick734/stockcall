@@ -37,8 +37,8 @@
 //   --first-buyer 0x...    a wallet whose first buys mark the creators to buy (the wallet that seeds every
 //                          dev-added profile): its first buys are followed instantly, without the profile lookup
 //   --follow-first         with --new: also buy when a creator makes the first buy of their own keys on chain
-//   --keys N               keys per creator, decimals allowed down to 0.01 (default 10, the launch cap)
-//   --max-eth X            most to pay per creator, fees included (default 0.015)
+//   --keys N               keys per creator, decimals allowed down to 0.01 (default 2; at most 10 in a creator's first 5 minutes)
+//   --max-eth X            most to pay per creator, fees included (default 0.005)
 //   --budget X             most to spend in total this run (default 0.1)
 //   --min-points N         --new: skip members with fewer site points (default 0)
 //   --min-followers N      --new: skip members with fewer followers (default 0)
@@ -85,7 +85,7 @@ const iface = new ethers.Interface(ABI);
 // ---------------------------------------------------------------- options
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 150, firstBuyers: [], observe: false, require: [], any: false, maxSupply: 0n };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "2", maxEth: "0.005", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 150, firstBuyers: [], observe: false, require: [], any: false, maxSupply: 0n };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -396,6 +396,14 @@ async function main() {
     return { to: keysAddr, data: iface.encodeFunctionData("buyKeys", [creator, units, o.referrer]), value };
   }
 
+  /** Signs and sends one transaction at a time, so nonces reach the node in order. */
+  let sendChain = Promise.resolve();
+  function sendInOrder(sign) {
+    const run = sendChain.then(async () => broadcast(await sign()));
+    sendChain = run.catch(() => {});
+    return run;
+  }
+
   async function broadcast(raw) {
     const sends = [p.send("eth_sendRawTransaction", [raw])];
     if (p2) sends.push(p2.send("eth_sendRawTransaction", [raw]));
@@ -470,21 +478,40 @@ async function main() {
     } catch {}
   }
 
+  /** Price with fees of `units` at `supply`, computed locally from the curve (same math as the contract). */
+  const G = (a) => 2n * a * a * a + 10_000n * a - 300n * a * a;
+  const feeBps = pf + cf + rf;
+  function localCost(supply, units) {
+    const a = supply + 200n;
+    const num = initial * (G(a + units) - G(a));
+    const price = num === 0n ? 0n : (num - 1n) / 15_000_000n + 1n;
+    return price + (price * feeBps) / 10_000n + 3n;
+  }
+  /** The most units (up to the request) whose cost at `supply` fits --max-eth; 0 if not even 0.01 key fits. */
+  function fitUnits(supply) {
+    let units = o.units > LAUNCH_CAP ? LAUNCH_CAP : o.units;
+    while (units > 0n && localCost(supply, units) > o.maxWei) units -= units > 20n ? units / 10n : 1n;
+    return units;
+  }
+
   /** Buys one creator right away, nothing checked first: used for on-chain first buys, where every millisecond
    *  counts. The contract enforces the limits: msg.value (--max-eth) is the most paid, the rest is refunded, and a
    *  buy over the launch cap or over --max-eth reverts. */
-  async function buyFast(creator, label, t0) {
+  async function buyFast(creator, label, t0, supply = 0n) {
     if (busy.has(creator)) return;
     busy.add(creator);
     try {
       if (spent + o.maxWei > o.budgetWei) return log(`${label}: skip, budget used up (${eth(spent)} committed)`);
-      const units = o.units > LAUNCH_CAP ? LAUNCH_CAP : o.units;
-      const tx = buyTx(creator, units, o.maxWei);
-      if (!o.live) return log(`${label}: would buy ${keysOf(units)} keys now, paying at most ${eth(o.maxWei)} (${Date.now() - t0} ms after spotting it)`);
-      spent += o.maxWei;
-      const signed = await wallet.signTransaction({ ...tx, ...gas, chainId: CHAIN, type: 2, nonce: nonce++, gasLimit: fastLimit });
-      const hash = await broadcast(signed);
-      log(`${label}: sent ${hash} (${Date.now() - t0} ms after spotting it)`);
+      const units = fitUnits(supply);
+      if (!units) return log(`${label}: skip, ${keysOf(supply)} keys already out and even 0.01 key costs more than --max-eth`);
+      const quote = localCost(supply, units);
+      // pay the quote plus room for a few buys landing first (the rest is refunded), never more than --max-eth
+      const value = quote * 2n < o.maxWei ? quote * 2n : o.maxWei;
+      const tx = buyTx(creator, units, value);
+      if (!o.live) return log(`${label}: would buy ${keysOf(units)} keys at supply ${keysOf(supply)}, ~${eth(quote)} (${Date.now() - t0} ms after spotting it)`);
+      spent += value;
+      const hash = await sendInOrder(() => wallet.signTransaction({ ...tx, ...gas, chainId: CHAIN, type: 2, nonce: nonce++, gasLimit: fastLimit }));
+      log(`${label}: sent ${hash}: ${keysOf(units)} keys at supply ${keysOf(supply)}, ~${eth(quote)} (${Date.now() - t0} ms after spotting it)`);
       await report(hash, label, creator);
     } catch (e) {
       log(`${label}: error ${decodeError(e)}`);
@@ -606,7 +633,7 @@ async function main() {
           } else {
             seen.add(p.address);
             log(`@${p.user.username}: profile is live, key address ${p.address}, ${keysOf(BigInt(p.user.keySupply || 0))} keys out`);
-            buyFast(p.address, `@${p.user.username}`, t0);
+            buyFast(p.address, `@${p.user.username}`, t0, BigInt(p.user.keySupply || 0));
           }
         }
       } catch (e) {
@@ -637,7 +664,7 @@ async function main() {
             const t0 = Date.now();
             seen.add(creator);
             if (o.firstBuyers.includes(trader)) {
-              buyFast(creator, `creator ${creator.slice(0, 10)}`, t0);
+              buyFast(creator, `creator ${creator.slice(0, 10)}`, t0, supply);
               profile(creator)
                 .then((pr) => pr && log(`creator ${creator.slice(0, 10)} is @${pr.user.username} (points=${pr.user.points}, member #${pr.user.memberNo})`))
                 .catch(() => {});
@@ -653,9 +680,9 @@ async function main() {
               const watched = o.watch.some((h) => h.replace(/^@/, "").toLowerCase() === u.username.toLowerCase());
               const passes = watched || ((u.points ?? 0) >= o.minPoints && (u.followersCount ?? 0) >= o.minFollowers && matches(u, o.require) && supply <= o.maxSupply);
               log(`first buy of @${u.username} (${keysOf(amount)} keys by ${trader === creator ? "the creator" : trader}), block ${l.blockNumber}: ${passes ? "matches" : "does not match, skip"}`);
-              if (passes) buyFast(creator, `@${u.username}`, t0);
+              if (passes) buyFast(creator, `@${u.username}`, t0, supply);
             } else if (o.followFirst && trader === creator) {
-              buyFast(creator, `creator ${creator.slice(0, 10)}`, t0);
+              buyFast(creator, `creator ${creator.slice(0, 10)}`, t0, supply);
             }
           }
         } catch (e) {

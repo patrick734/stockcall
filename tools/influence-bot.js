@@ -263,13 +263,13 @@ async function observe(o) {
     `#${u.memberNo} points=${u.points} earned=${u.earnedPoints} score=${u.score} registered=${u.registered} genesisRank=${u.genesisRank} tier=${u.tier} keys=${keysOf(BigInt(u.keySupply || 0))}${stats ? ` holders=${stats.holders}` : ""} keysAddress=${a || "?"}`;
   log(`observing ${SITE} every ${o.feedMs} ms and on-chain first buys; everything is saved to ${file}. Ctrl-C to stop.`);
   for (;;) {
-    const lists = await Promise.allSettled([getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`)]);
+    const lists = await Promise.allSettled([getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`), getJson(`${SITE}/api/market/explore?tab=new&limit=50`)]);
     if (!lists.some((l) => l.status === "fulfilled")) log(`site: ${lists[0].reason?.message}`);
     const members = [];
     for (const l of lists) {
       if (l.status !== "fulfilled") continue;
       const j = l.value;
-      for (const [src, arr] of [["newusers", j.users], ["members", j.members], ["newKeys", j.newKeys], ["keys", j.keys]]) for (const x of arr || []) members.push([src, x.user || x]);
+      for (const [src, arr] of [["newusers", j.users], ["members", j.members], ["newKeys", j.newKeys], ["keys", j.keys], ["exploreNew", j.creators]]) for (const x of arr || []) members.push([src, x.user || x]);
     }
     // member numbers the new-members list skips
     const listed = members.filter(([src]) => src === "newusers").map(([, u]) => Number(u.memberNo)).filter(Boolean);
@@ -780,17 +780,19 @@ async function main() {
     }
     if (o.watchNew && Date.now() - lastFeed >= o.feedMs) {
       lastFeed = Date.now();
-      const lists = await Promise.allSettled([getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`)]);
+      // the Explore page's "new" list first: it carries each creator's key address and supply
+      const lists = await Promise.allSettled([getJson(`${SITE}/api/market/explore?tab=new&limit=50`), getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`)]);
       const members = [];
       for (const l of lists) {
         if (l.status !== "fulfilled") continue;
         const j = l.value;
-        members.push(...(j.users || []), ...(j.members || []), ...(j.newKeys || []).map((k) => k.user || k), ...(j.keys || []).map((k) => k.user || k));
+        members.push(...(j.creators || []).filter((c) => c.user).map((c) => [c.user, c.address]));
+        members.push(...[...(j.users || []), ...(j.members || []), ...(j.newKeys || []).map((k) => k.user || k), ...(j.keys || []).map((k) => k.user || k)].map((u) => [u, undefined]));
       }
       if (!lists.some((l) => l.status === "fulfilled")) log(`site feed: ${lists[0].reason?.message}`);
-      for (const u of members) {
+      for (const [u, address] of members) {
         try {
-          await consider(u, o.watch.some((h) => h.replace(/^@/, "").toLowerCase() === String(u.username).toLowerCase()));
+          await consider(u, o.watch.some((h) => h.replace(/^@/, "").toLowerCase() === String(u.username).toLowerCase()), address);
         } catch (e) {
           log(`@${u.username}: ${decodeError(e)}`);
         }

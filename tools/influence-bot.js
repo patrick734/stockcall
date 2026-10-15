@@ -32,6 +32,8 @@
 //   --watch-file list.txt  the same, one handle per line
 //   --watch-ms N           how often each watched profile is checked (default 1000)
 //   --feed-ms N            --new: how often the site's member lists are read (default 1000)
+//   --chain-ms N           --new: how often the chain is checked for first buys (default 300); these show up
+//                          seconds before the site's lists do, so they are the earliest signal
 //   --follow-first         with --new: also buy when a creator makes the first buy of their own keys on chain
 //   --keys N               keys per creator, decimals allowed down to 0.01 (default 10, the launch cap)
 //   --max-eth X            most to pay per creator, fees included (default 0.015)
@@ -81,7 +83,7 @@ const iface = new ethers.Interface(ABI);
 // ---------------------------------------------------------------- options
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, observe: false, require: [], any: false, maxSupply: 0n };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "10", maxEth: "0.015", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 300, observe: false, require: [], any: false, maxSupply: 0n };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -99,6 +101,7 @@ function parseArgs(argv) {
     else if (a === "--watch-file") o.watch.push(...fs.readFileSync(val(), "utf8").split(/[\s,]+/).map((x) => x.trim()).filter((x) => x && !x.startsWith("#")));
     else if (a === "--watch-ms") o.watchMs = Math.max(250, Number(val()));
     else if (a === "--feed-ms") o.feedMs = Math.max(300, Number(val()));
+    else if (a === "--chain-ms") o.chainMs = Math.max(100, Number(val()));
     else if (a === "--follow-first") o.followFirst = true;
     else if (a === "--targets") o.targets.push(...val().split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--keys") o.keys = val();
@@ -511,7 +514,7 @@ async function main() {
   while (await keys.paused().catch(() => true)) await sleep(1000);
   const seen = new Set(Object.keys(state.bought));
   const handled = new Set(); // watchlist handles already bought or skipped
-  const sources = [o.watch.length && `${o.watch.length} watched profile(s) every ${o.watchMs} ms`, o.watchNew && `new members and new keys every ${o.feedMs} ms`, o.followFirst && "on-chain first buys every second"].filter(Boolean);
+  const sources = [o.watch.length && `${o.watch.length} watched profile(s) every ${o.watchMs} ms`, o.watchNew && `new members and new keys every ${o.feedMs} ms`, (o.watchNew || o.followFirst) && `on-chain first buys every ${o.chainMs} ms`].filter(Boolean);
   log(`watching: ${sources.join(", ")}`);
 
   /** A member seen on the site: buy if they have a wallet, pass the filters and (unless watched) have no keys out. */
@@ -564,7 +567,45 @@ async function main() {
     setTimeout(tick, Math.floor((o.watchMs * i) / o.watch.length));
   });
 
-  let fromBlock = (await p.getBlockNumber()) + 1;
+  // On-chain first buys are the earliest public sign of a new creator: the site's lists show them seconds later.
+  // Each one is looked up on the site by address and bought if the profile passes --require (with --new), or if
+  // the creator bought their own first key (--follow-first alone).
+  if (o.watchNew || o.followFirst) {
+    let fromBlock = (await p.getBlockNumber()) + 1;
+    (async () => {
+      for (;;) {
+        try {
+          const head = await p.getBlockNumber();
+          if (head >= fromBlock) {
+            const logs = await p.getLogs({ address: keysAddr, topics: [iface.getEvent("Trade").topicHash], fromBlock, toBlock: head });
+            fromBlock = head + 1;
+            for (const l of logs) {
+              const { trader, creator, isBuy, amount, supply } = iface.parseLog(l).args;
+              if (!isBuy || supply !== amount || trader === me || seen.has(creator)) continue;
+              if (o.watchNew) {
+                const pr = await profile(creator).catch(() => null);
+                if (!pr) {
+                  log(`first buy of ${creator} by ${trader}: no profile on the site; skip`);
+                  seen.add(creator);
+                  continue;
+                }
+                log(`first buy of @${pr.user.username} (${keysOf(amount)} keys by ${trader === creator ? "the creator" : trader}), block ${l.blockNumber}`);
+                const watched = o.watch.some((h) => h.replace(/^@/, "").toLowerCase() === pr.user.username.toLowerCase());
+                if (!(await consider(pr.user, watched, creator))) seen.add(creator);
+              } else if (trader === creator) {
+                seen.add(creator);
+                buyNow(creator, `creator ${creator.slice(0, 10)}`);
+              }
+            }
+          }
+        } catch (e) {
+          log(`chain: ${decodeError(e)}`);
+        }
+        await sleep(o.chainMs);
+      }
+    })();
+  }
+
   let lastFeed = 0;
   for (;;) {
     if (spent >= o.budgetWei) {
@@ -589,25 +630,7 @@ async function main() {
         }
       }
     }
-    if (o.followFirst) {
-      try {
-        const head = await p.getBlockNumber();
-        if (head >= fromBlock) {
-          const logs = await p.getLogs({ address: keysAddr, topics: [iface.getEvent("Trade").topicHash], fromBlock, toBlock: head });
-          fromBlock = head + 1;
-          for (const l of logs) {
-            const ev = iface.parseLog(l);
-            const { trader, creator, isBuy, amount, supply } = ev.args;
-            if (!isBuy || supply !== amount || trader !== creator || trader === me || seen.has(creator)) continue;
-            seen.add(creator);
-            buyNow(creator, `creator ${creator.slice(0, 10)}`);
-          }
-        }
-      } catch (e) {
-        log(`logs: ${e.message}`);
-      }
-    }
-    await sleep(o.watchNew ? Math.min(o.feedMs, 1000) : o.followFirst ? 1000 : 60_000);
+    await sleep(o.watchNew ? Math.min(o.feedMs, 1000) : 60_000);
   }
 }
 

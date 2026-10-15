@@ -167,17 +167,35 @@ async function getJson(url) {
   return r.json();
 }
 
-/** The site's creator address for a member: their linked wallet, else their in-app wallet. */
-const creatorAddress = (u) => u && (u.wallet || u.appWallet) && ethers.getAddress(u.wallet || u.appWallet);
+/** The address a member's keys trade under: the profile endpoint's keysAddress (the lists hide wallets), else
+ *  their linked or in-app wallet. */
+const creatorAddress = (u, keysAddress) => {
+  const a = keysAddress || u?.keysAddress || u?.wallet || u?.appWallet;
+  return a && ethers.isAddress(a) ? ethers.getAddress(a) : null;
+};
+
+/** A member's full profile and key address from /api/users/<name>; null when there is no such member yet. */
+async function profile(name) {
+  const r = await fetch(`${SITE}/api/users/${encodeURIComponent(name)}`, { headers: { accept: "application/json", "user-agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(5000) });
+  if (r.status === 404) return null;
+  if (!r.ok) {
+    const e = new Error(`profile @${name}: HTTP ${r.status}`);
+    e.status = r.status;
+    throw e;
+  }
+  const j = await r.json();
+  const u = j.user || j;
+  if (!u || !u.username) return null;
+  return { user: u, address: creatorAddress(u, j.keysAddress), stats: j.stats || null };
+}
 
 async function resolveTarget(t) {
   if (ethers.isAddress(t)) return { address: ethers.getAddress(t), label: t };
   const name = t.replace(/^@/, "");
-  const j = await getJson(`${SITE}/api/users/${encodeURIComponent(name)}`);
-  const u = j.user || j;
-  const a = creatorAddress(u);
-  if (!a) fail(`@${name} has no wallet linked on influence.family yet, so their keys cannot be bought. Try again later or give an address.`);
-  return { address: a, label: `@${u.username || name}` };
+  const p = await profile(name);
+  if (!p) fail(`@${name} is not on influence.family yet. Use --watch @${name} to buy the moment they are added.`);
+  if (!p.address) fail(`@${name} has no key address yet. Use --watch @${name} to buy the moment they get one.`);
+  return { address: p.address, label: `@${p.user.username}` };
 }
 
 function decodeError(e) {
@@ -193,42 +211,83 @@ function decodeError(e) {
 
 // ---------------------------------------------------------------- bot
 
-/** --observe: buys nothing and needs no wallet. Prints every member the site lists as they appear or change, and
- *  appends each full profile to ~/.stockcall/influence-members.jsonl, to find what marks the profiles the dev adds. */
+/** --observe: buys nothing and needs no wallet. Watches for the profiles the dev adds and logs what marks them:
+ *  - member numbers skipped by the new-members list (dev-added profiles seem to be left out of it),
+ *  - members appearing in the trending, new-keys and new-members lists, with their key address,
+ *  - first buys of any creator on chain (supply 0 -> above 0): who bought, how much, and the creator's profile.
+ *  Everything is appended to ~/.stockcall/influence-members.jsonl. */
 async function observe(o) {
   const file = path.join(os.homedir(), ".stockcall", "influence-members.jsonl");
   fs.mkdirSync(path.dirname(file), { recursive: true });
+  const record = (kind, data) => fs.appendFileSync(file, JSON.stringify({ seenAt: new Date().toISOString(), kind, ...data }) + "\n");
+  const STABLE = ["memberNo", "registered", "genesisRank", "walletVerified", "tier"];
   const known = new Map();
-  const SHOW = ["memberNo", "registered", "wallet", "appWallet", "walletVerified", "genesisRank", "points", "score", "tier", "keySupply", "followersCount", "joinedAt"];
+  const numbers = new Set();
+  let topNo = 0;
   let first = true;
-  log(`observing ${SITE} every ${o.feedMs} ms; full profiles go to ${file}. Ctrl-C to stop.`);
+  const p = new ethers.JsonRpcProvider(process.env.RPC || "https://rpc.mainnet.chain.robinhood.com", CHAIN, { staticNetwork: true });
+  let fromBlock = null;
+  const show = (u, a, stats) =>
+    `#${u.memberNo} points=${u.points} earned=${u.earnedPoints} score=${u.score} registered=${u.registered} genesisRank=${u.genesisRank} tier=${u.tier} keys=${keysOf(BigInt(u.keySupply || 0))}${stats ? ` holders=${stats.holders}` : ""} keysAddress=${a || "?"}`;
+  log(`observing ${SITE} every ${o.feedMs} ms and on-chain first buys; everything is saved to ${file}. Ctrl-C to stop.`);
   for (;;) {
     const lists = await Promise.allSettled([getJson(`${SITE}/api/feed?tab=newusers`), getJson(`${SITE}/api/trending?limit=50`)]);
+    if (!lists.some((l) => l.status === "fulfilled")) log(`site: ${lists[0].reason?.message}`);
     const members = [];
     for (const l of lists) {
       if (l.status !== "fulfilled") continue;
       const j = l.value;
       for (const [src, arr] of [["newusers", j.users], ["members", j.members], ["newKeys", j.newKeys], ["keys", j.keys]]) for (const x of arr || []) members.push([src, x.user || x]);
     }
-    if (!lists.some((l) => l.status === "fulfilled")) log(`site: ${lists[0].reason?.message}`);
+    // member numbers the new-members list skips
+    const listed = members.filter(([src]) => src === "newusers").map(([, u]) => Number(u.memberNo)).filter(Boolean);
+    if (listed.length) {
+      const lo = Math.min(...listed);
+      const hi = Math.max(...listed);
+      listed.forEach((n) => numbers.add(n));
+      for (let n = Math.max(lo, topNo ? topNo - 50 : lo); n <= hi; n++) {
+        if (numbers.has(n)) continue;
+        numbers.add(n);
+        log(`HIDDEN member #${n}: skipped by the new-members list (likely added by the dev)`);
+        record("hidden", { memberNo: n });
+      }
+      topNo = Math.max(topNo, hi);
+    }
     for (const [src, u] of members) {
       const id = u.id || u.username;
-      const json = JSON.stringify(u);
+      const key = JSON.stringify(STABLE.map((k) => u[k]));
       const before = known.get(id);
-      if (before === json) continue;
-      known.set(id, json);
-      fs.appendFileSync(file, JSON.stringify({ seenAt: new Date().toISOString(), list: src, initial: first, profile: u }) + "\n");
-      if (first) continue;
+      if (before && before.key === key) continue;
+      known.set(id, { key, u });
       if (!before) {
-        const extra = Object.keys(u).filter((k) => !SHOW.includes(k) && !["id", "username", "displayName", "avatarUrl", "bannerUrl", "bio", "earnedPoints", "staked", "keyPrice", "followingCount", "postsCount", "following"].includes(k));
-        log(`NEW @${u.username} (${u.displayName}) [${src}] ${SHOW.map((k) => `${k}=${JSON.stringify(u[k])}`).join(" ")}${extra.length ? "  other: " + extra.map((k) => `${k}=${JSON.stringify(u[k])}`).join(" ") : ""}`);
+        const pr = first ? null : await profile(u.username).catch(() => null);
+        record("member", { list: src, initial: first, profile: u, keysAddress: pr?.address || null });
+        if (!first) log(`NEW in ${src}: @${u.username} (${u.displayName}) ${show(u, pr?.address, pr?.stats)}`);
       } else {
-        const old = JSON.parse(before);
-        const diff = Object.keys({ ...old, ...u }).filter((k) => JSON.stringify(old[k]) !== JSON.stringify(u[k]) && !["points", "score", "earnedPoints", "followersCount", "followingCount", "postsCount"].includes(k));
-        if (diff.length) log(`CHANGED @${u.username}: ${diff.map((k) => `${k} ${JSON.stringify(old[k])} -> ${JSON.stringify(u[k])}`).join(", ")}`);
+        const diff = STABLE.filter((k) => JSON.stringify(before.u[k]) !== JSON.stringify(u[k]));
+        record("changed", { list: src, profile: u });
+        log(`CHANGED @${u.username}: ${diff.map((k) => `${k} ${JSON.stringify(before.u[k])} -> ${JSON.stringify(u[k])}`).join(", ")}`);
       }
     }
-    if (first) log(`${known.size} members listed now (saved); printing only new ones and changes from here`);
+    // first buys on chain
+    try {
+      const head = await p.getBlockNumber();
+      if (fromBlock === null) fromBlock = head + 1;
+      if (head >= fromBlock) {
+        const logs = await p.getLogs({ address: KEYS_FALLBACK, topics: [iface.getEvent("Trade").topicHash], fromBlock, toBlock: head });
+        fromBlock = head + 1;
+        for (const l of logs) {
+          const { trader, creator, isBuy, amount, supply } = iface.parseLog(l).args;
+          if (!isBuy || supply !== amount) continue;
+          const pr = await profile(creator).catch(() => null);
+          log(`FIRST BUY of ${creator} by ${trader === creator ? "the creator themself" : trader}: ${keysOf(amount)} keys, block ${l.blockNumber}${pr ? `  = @${pr.user.username} ${show(pr.user, pr.address, pr.stats)}` : "  (no profile found by address)"}`);
+          record("firstBuy", { creator, trader, amount: amount.toString(), block: l.blockNumber, tx: l.transactionHash, username: pr?.user.username || null, profile: pr?.user || null });
+        }
+      }
+    } catch (e) {
+      log(`chain: ${decodeError(e)}`);
+    }
+    if (first) log(`${known.size} members listed now (saved); printing hidden numbers, new members and first buys from here`);
     first = false;
     await sleep(o.feedMs);
   }
@@ -454,16 +513,24 @@ async function main() {
   log(`watching: ${sources.join(", ")}`);
 
   /** A member seen on the site: buy if they have a wallet, pass the filters and (unless watched) have no keys out. */
-  async function consider(u, watched) {
-    const a = creatorAddress(u);
-    if (!a) return false;
+  const looked = new Set(); // list members whose profile was already fetched
+  async function consider(u, watched, keysAddress) {
     const label = `@${u.username}`;
+    if (!watched && ((u.points ?? 0) < o.minPoints || (u.followersCount ?? 0) < o.minFollowers || !matches(u, o.require))) return false;
+    let a = creatorAddress(u, keysAddress);
+    if (!keysAddress && !u.keysAddress) {
+      // the member lists hide key addresses: read the profile once per member
+      if (looked.has(u.username)) return false;
+      looked.add(u.username);
+      const p = await profile(u.username).catch(() => null);
+      a = p?.address || null;
+    }
+    if (!a) return false;
     if (seen.has(a)) {
       if (watched && state.bought[a]) log(`${label}: already bought on an earlier run (${state.bought[a].tx})`);
       return true;
     }
     seen.add(a);
-    if (!watched && ((u.points ?? 0) < o.minPoints || (u.followersCount ?? 0) < o.minFollowers || !matches(u, o.require))) return true;
     const supply = await keys.keysSupply(a);
     if (supply > 0n && !watched) {
       log(`${label}: keys already bought by someone; skip`);
@@ -482,19 +549,11 @@ async function main() {
     const tick = async () => {
       if (handled.has(name)) return;
       try {
-        const r = await fetch(`${SITE}/api/users/${encodeURIComponent(name)}`, { headers: { accept: "application/json", "user-agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(5000) });
-        if (r.status === 429) backoff = Math.min(30_000, (backoff || 1000) * 2);
-        else {
-          backoff = 0;
-          if (r.ok) {
-            const j = await r.json();
-            const u = j.user || j;
-            if (u && u.username && creatorAddress(u)) {
-              if (await consider(u, true)) handled.add(name);
-            }
-          }
-        }
+        const p = await profile(name);
+        backoff = 0;
+        if (p && p.address && (await consider(p.user, true, p.address))) handled.add(name);
       } catch (e) {
+        if (e.status === 429) backoff = Math.min(30_000, (backoff || 1000) * 2);
         if (!tick.warned) log(`@${name}: profile check failed (${decodeError(e)}); retrying`);
         tick.warned = true;
       }

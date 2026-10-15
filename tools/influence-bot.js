@@ -30,6 +30,7 @@
 //                          (only gas is lost). On-chain first buys are then never followed: someone else was first.
 //   --allow-second         also buy creators someone already bought into (--max-supply, --first-buyer, --follow-first)
 //   --max-supply N         --new: still buy when up to N keys are already out (default 0: only untouched creators)
+//   --latency              how fast this machine reaches the site and the chain (compare VPS locations)
 //   --observe              buys nothing, needs no wallet: logs every new or changed member with all their fields
 //   --watch @a,@b          X handles of influencers not on the site yet: each profile is checked every --watch-ms and
 //                          bought the moment it has a wallet, even if someone else bought first (--max-eth caps it)
@@ -88,6 +89,19 @@ const iface = new ethers.Interface(ABI);
 
 // ---------------------------------------------------------------- options
 
+/** Handles in a watch file: one per line (or comma separated), # starts a comment. */
+function readHandles(file) {
+  if (!fs.existsSync(file)) fail(`${file} not found. Create it with one @handle per line.`);
+  return fs
+    .readFileSync(file, "utf8")
+    .split(/\r?\n/)
+    .map((l) => l.replace(/#.*$/, ""))
+    .join(",")
+    .split(/[\s,]+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
 function parseArgs(argv) {
   const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "2", maxEth: "0.005", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 150, firstBuyers: [], firstOnly: true, observe: false, require: [], any: false, maxSupply: 0n };
   const rest = [];
@@ -105,7 +119,10 @@ function parseArgs(argv) {
     else if (a === "--max-supply") o.maxSupply = BigInt(Math.round(Number(val()) * 100));
     else if (a === "--require") o.require.push(parseRule(val()));
     else if (a === "--watch") o.watch.push(...val().split(",").map((x) => x.trim()).filter(Boolean));
-    else if (a === "--watch-file") o.watch.push(...fs.readFileSync(val(), "utf8").split(/[\s,]+/).map((x) => x.trim()).filter((x) => x && !x.startsWith("#")));
+    else if (a === "--watch-file") {
+      o.watchFile = val();
+      o.watch.push(...readHandles(o.watchFile));
+    } else if (a === "--latency") o.latency = true;
     else if (a === "--watch-ms") o.watchMs = Math.max(250, Number(val()));
     else if (a === "--feed-ms") o.feedMs = Math.max(300, Number(val()));
     else if (a === "--chain-ms") o.chainMs = Math.max(50, Number(val()));
@@ -124,9 +141,9 @@ function parseArgs(argv) {
     else rest.push(a);
   }
   o.wallet = rest[0];
-  if (o.observe) return o;
+  if (o.observe || o.latency) return o;
   if (!o.wallet) fail("usage: node tools/influence-bot.js <wallet-name> --targets 0x...,@user | --new [--live]  (see the top of this file)");
-  if (!o.targets.length && !o.watchNew && !o.watch.length && !o.firstBuyers.length) fail("give --targets, --watch, --new and/or --first-buyer");
+  if (!o.targets.length && !o.watchNew && !o.watch.length && !o.watchFile && !o.firstBuyers.length) fail("give --targets, --watch, --new and/or --first-buyer");
   if (o.firstOnly && (o.firstBuyers.length || o.followFirst || o.maxSupply > 0n))
     fail("--first-buyer, --follow-first and --max-supply buy after someone else; add --allow-second to use them");
   if (o.watchNew && o.live && !o.require.length && !o.any)
@@ -308,8 +325,32 @@ async function observe(o) {
   }
 }
 
+/** --latency: how fast this machine reaches the site and the chain (no wallet needed). Run it on each VPS you
+ *  consider: the one with the lowest numbers sees new profiles first and lands its buy first. */
+async function latency() {
+  const rpc = process.env.RPC || "https://rpc.mainnet.chain.robinhood.com";
+  const time = async (fn) => {
+    const t = performance.now();
+    await fn();
+    return performance.now() - t;
+  };
+  const probes = {
+    "site profile lookup": () => fetch(`${SITE}/api/users/elonmusk`, { headers: { accept: "application/json" } }).then((r) => r.text()),
+    "chain RPC": () => fetch(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' }).then((r) => r.text()),
+  };
+  for (const [name, fn] of Object.entries(probes)) {
+    const ms = [];
+    for (let i = 0; i < 12; i++) ms.push(await time(fn).catch(() => NaN));
+    const ok = ms.slice(2).filter(Number.isFinite).sort((a, b) => a - b); // first two warm the connection
+    if (!ok.length) console.log(`${name.padEnd(20)} unreachable`);
+    else console.log(`${name.padEnd(20)} fastest ${ok[0].toFixed(0)} ms   typical ${ok[Math.floor(ok.length / 2)].toFixed(0)} ms`);
+  }
+  console.log("Lower is better. A buy needs one site lookup and one RPC send after the profile appears.");
+}
+
 async function main() {
   const o = parseArgs(process.argv.slice(2));
+  if (o.latency) return latency();
   if (o.observe) return observe(o);
   const rpc = process.env.RPC || "https://rpc.mainnet.chain.robinhood.com";
   const p = new ethers.JsonRpcProvider(rpc, CHAIN, { staticNetwork: true });
@@ -586,13 +627,13 @@ async function main() {
     await Promise.all(targets.map((t) => buyNow(t.address, t.label)));
   }
 
-  if (!o.watchNew && !o.watch.length && !o.firstBuyers.length && !o.followFirst) return;
+  if (!o.watchNew && !o.watch.length && !o.watchFile && !o.firstBuyers.length && !o.followFirst) return;
 
   // ---------------------------------------------------------------- new creators and the watchlist
   while (await keys.paused().catch(() => true)) await sleep(1000);
   const seen = new Set(Object.keys(state.bought));
   const handled = new Set(); // watchlist handles already bought or skipped
-  const sources = [o.watch.length && `${o.watch.length} watched profile(s) every ${o.watchMs} ms`, o.watchNew && `new members and new keys every ${o.feedMs} ms`, !o.firstOnly && (o.watchNew || o.followFirst) && `on-chain first buys every ${o.chainMs} ms`].filter(Boolean);
+  const sources = [(o.watch.length || o.watchFile) && `${o.watch.length} watched profile(s) every ${o.watchMs} ms${o.watchFile ? ` (add more to ${o.watchFile} any time)` : ""}`, o.watchNew && `new members and new keys every ${o.feedMs} ms`, !o.firstOnly && (o.watchNew || o.followFirst) && `on-chain first buys every ${o.chainMs} ms`].filter(Boolean);
   if (sources.length) log(`watching: ${sources.join(", ")}`);
 
   /** A member seen on the site: buy if they have a wallet, pass the filters and (unless watched) have no keys out. */
@@ -635,8 +676,11 @@ async function main() {
   }
 
   // Each watched profile is checked on its own timer, spread over --watch-ms, so a new one is seen within that time.
-  o.watch.forEach((h, i) => {
+  const watching = new Set();
+  function startWatch(h, delay) {
     const name = h.replace(/^@/, "");
+    if (watching.has(name.toLowerCase())) return;
+    watching.add(name.toLowerCase());
     let backoff = 0;
     const tick = async () => {
       if (handled.has(name)) return;
@@ -665,8 +709,21 @@ async function main() {
       }
       if (!handled.has(name)) setTimeout(tick, o.watchMs + backoff);
     };
-    setTimeout(tick, Math.floor((o.watchMs * i) / o.watch.length));
-  });
+    setTimeout(tick, delay);
+  }
+  o.watch.forEach((h, i) => startWatch(h, Math.floor((o.watchMs * i) / o.watch.length)));
+  // The watch file is read again every 2 s: add a handle to it while the bot runs and it is watched at once.
+  if (o.watchFile) {
+    setInterval(() => {
+      try {
+        for (const h of readHandles(o.watchFile)) {
+          if (watching.has(h.replace(/^@/, "").toLowerCase())) continue;
+          log(`now watching ${h} (added to ${o.watchFile})`);
+          startWatch(h, 0);
+        }
+      } catch {}
+    }, 2000);
+  }
 
   // On-chain first buys are the earliest public sign of a new creator: the site's lists show them seconds later.
   // Each one is looked up on the site by address and bought if the profile passes --require (with --new), or if

@@ -778,13 +778,13 @@ async function main() {
               const label = `copy ${creator.slice(0, 10)}`;
               if (isBuy && (o.copyEvery || !copied.has(creator))) {
                 copied.add(creator);
-                log(`${label}: copied wallet bought ${keysOf(amount)} keys (supply now ${keysOf(supply)}), block ${l.blockNumber}`);
+                log(`${label}: copied wallet ${trader.slice(0, 8)} bought ${keysOf(amount)} keys (supply now ${keysOf(supply)}), block ${l.blockNumber}`);
                 buyFast(creator, label, t0, supply, true);
                 profile(creator)
                   .then((pr) => pr && log(`${label} is @${pr.user.username} (points=${pr.user.points})`))
                   .catch(() => {});
               } else if (!isBuy && o.copySells) {
-                log(`${label}: copied wallet sold ${keysOf(amount)} keys, block ${l.blockNumber}`);
+                log(`${label}: copied wallet ${trader.slice(0, 8)} sold ${keysOf(amount)} keys (supply now ${keysOf(supply)}), block ${l.blockNumber}`);
                 sellAll(creator, label, t0);
               }
               continue;

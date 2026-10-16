@@ -30,6 +30,7 @@
 //                          (only gas is lost). On-chain first buys are then never followed: someone else was first.
 //   --copy 0x...           copy-trade a wallet: whenever it buys keys of a creator, buy --keys of the same creator
 //                          right after (once per creator); when it sells a creator you hold, sell yours too
+//   --copy-every           with --copy: copy every buy it makes, not only its first buy of each creator
 //   --no-copy-sells        with --copy: keep your keys when the copied wallet sells
 //   --allow-second         also buy creators someone already bought into (--max-supply, --first-buyer, --follow-first)
 //   --max-supply N         --new: still buy when up to N keys are already out (default 0: only untouched creators)
@@ -108,7 +109,7 @@ function readHandles(file) {
 }
 
 function parseArgs(argv) {
-  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "2", maxEth: "0.005", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 150, firstBuyers: [], firstOnly: true, copy: [], copySells: true, observe: false, require: [], any: false, maxSupply: 0n };
+  const o = { live: false, targets: [], watchNew: false, followFirst: false, keys: "2", maxEth: "0.005", budget: "0.1", minPoints: 0, minFollowers: 0, referrer: ethers.ZeroAddress, pollMs: 100, gasLimit: null, watch: [], watchMs: 1000, feedMs: 1000, chainMs: 150, firstBuyers: [], firstOnly: true, copy: [], copySells: true, copyEvery: false, observe: false, require: [], any: false, maxSupply: 0n };
   const rest = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -123,6 +124,7 @@ function parseArgs(argv) {
     else if (a === "--allow-second") o.firstOnly = false;
     else if (a === "--copy") o.copy.push(...val().split(",").map((x) => ethers.getAddress(x.trim())));
     else if (a === "--no-copy-sells") o.copySells = false;
+    else if (a === "--copy-every") o.copyEvery = true;
     else if (a === "--max-supply") o.maxSupply = BigInt(Math.round(Number(val()) * 100));
     else if (a === "--require") o.require.push(parseRule(val()));
     else if (a === "--watch") o.watch.push(...val().split(",").map((x) => x.trim()).filter(Boolean));
@@ -760,7 +762,7 @@ async function main() {
   // the creator bought their own first key (--follow-first alone).
   const copied = new Set(Object.keys(state.bought));
   if (o.copy.length || (!o.firstOnly && (o.watchNew || o.followFirst || o.firstBuyers.length))) {
-    if (o.copy.length) log(`copy-trading ${o.copy.join(", ")}: ${keysOf(o.units)} keys of whatever it buys${o.copySells ? ", sell when it sells" : ""}`);
+    if (o.copy.length) log(`copy-trading ${o.copy.join(", ")}: ${keysOf(o.units)} keys ${o.copyEvery ? "on every buy it makes" : "of each creator it buys"}${o.copySells ? ", sell when it sells" : ""}`);
     if (o.firstBuyers.length) log(`following first buys by ${o.firstBuyers.join(", ")} instantly`);
     let fromBlock = (await p.getBlockNumber()) + 1;
     (async () => {
@@ -774,7 +776,7 @@ async function main() {
             if (o.copy.includes(trader)) {
               const t0 = Date.now();
               const label = `copy ${creator.slice(0, 10)}`;
-              if (isBuy && !copied.has(creator)) {
+              if (isBuy && (o.copyEvery || !copied.has(creator))) {
                 copied.add(creator);
                 log(`${label}: copied wallet bought ${keysOf(amount)} keys (supply now ${keysOf(supply)}), block ${l.blockNumber}`);
                 buyFast(creator, label, t0, supply, true);

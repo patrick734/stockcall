@@ -560,8 +560,16 @@ async function main() {
     try {
       if (spent + o.maxWei > o.budgetWei) return log(`${label}: skip, budget used up (${eth(spent)} committed)`);
       if (o.firstOnly && !after && supply > 0n) return log(`${label}: skip, ${keysOf(supply)} keys already out: not first`);
-      const units = fitUnits(supply);
-      if (!units) return log(`${label}: skip, ${keysOf(supply)} keys already out and even 0.01 key costs more than --max-eth`);
+      // copy-trading buys exactly --keys or nothing; the other modes shrink the amount to fit --max-eth
+      const exact = o.copy.length && after;
+      const want = o.units > LAUNCH_CAP ? LAUNCH_CAP : o.units;
+      const units = exact ? (localCost(supply, want) <= o.maxWei ? want : 0n) : fitUnits(supply);
+      if (!units)
+        return log(
+          exact
+            ? `${label}: skip, ${keysOf(want)} keys at supply ${keysOf(supply)} cost ~${eth(localCost(supply, want))}, over --max-eth ${eth(o.maxWei)}`
+            : `${label}: skip, ${keysOf(supply)} keys already out and even 0.01 key costs more than --max-eth`,
+        );
       const quote = localCost(supply, units);
       // pay the quote plus room for a few buys landing first (the rest is refunded), never more than --max-eth
       // first-only: the exact first-keys price, so any buy landing before ours makes it revert

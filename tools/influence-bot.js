@@ -773,11 +773,19 @@ async function main() {
     if (o.copy.length) log(`copy-trading ${o.copy.join(", ")}: ${keysOf(o.units)} keys ${o.copyEvery ? "on every buy it makes" : "of each creator it buys"}${o.copySells ? ", sell when it sells" : ""}`);
     if (o.firstBuyers.length) log(`following first buys by ${o.firstBuyers.join(", ")} instantly`);
     let fromBlock = (await p.getBlockNumber()) + 1;
+    // A failed read keeps fromBlock, so nothing is missed: the next good read picks up every block since. When the
+    // RPC rate-limits (403/429) the bot backs off, and with RPC2 set it reads from the other RPC meanwhile.
+    let backoff = 0;
+    let reader = p;
+    let errors = 0;
     (async () => {
       for (;;) {
         try {
           // one HTTP request: ethers batches calls made together
-          const [head, logs] = await Promise.all([p.getBlockNumber(), p.getLogs({ address: keysAddr, topics: [iface.getEvent("Trade").topicHash], fromBlock, toBlock: "latest" })]);
+          const [head, logs] = await Promise.all([reader.getBlockNumber(), reader.getLogs({ address: keysAddr, topics: [iface.getEvent("Trade").topicHash], fromBlock, toBlock: "latest" })]);
+          if (errors) log(`chain: reading again after ${errors} failed tries`);
+          errors = 0;
+          backoff = 0;
           fromBlock = Math.max(head, ...logs.map((l) => l.blockNumber)) + 1;
           for (const l of logs) {
             const { trader, creator, isBuy, amount, supply } = iface.parseLog(l).args;
@@ -824,9 +832,13 @@ async function main() {
             }
           }
         } catch (e) {
-          log(`chain: ${decodeError(e)}`);
+          const why = decodeError(e);
+          const limited = /403|429|Forbidden|Too Many/i.test(why);
+          backoff = limited ? Math.min(5000, backoff ? backoff * 2 : 500) : 300;
+          if (p2) reader = reader === p ? p2 : p;
+          if (++errors === 1) log(`chain: ${why}${limited ? " (rate-limited: backing off" + (p2 ? ", switching RPC" : "") + ")" : ""}`);
         }
-        await sleep(o.chainMs);
+        await sleep(o.chainMs + backoff);
       }
     })();
   }
